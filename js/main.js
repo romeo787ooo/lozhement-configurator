@@ -23,6 +23,7 @@ function init() {
   v.addEventListener("pointerup", onUp); v.addEventListener("pointercancel", onUp);
   v.addEventListener("focusin", e => { const g = e.target.closest && e.target.closest(".pk"); if (g && S.selected !== g.dataset.key) { selectItem(g.dataset.key); const n = v.querySelector('.pk[data-key="' + g.dataset.key + '"]'); if (n) n.focus(); } });
   document.addEventListener("keydown", e => {
+    if (typeof sketchIsOpen === "function" && sketchIsOpen()) return;
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
     if (!S.selected || !S.place[S.selected]) return;
     const refocus = () => { const n = v.querySelector('.pk[data-key="' + S.selected + '"]'); if (n) n.focus(); };
@@ -35,5 +36,7 @@ function init() {
 }
 initView3();
 initLayout();
+initZoom2D();
 initTools();
+initSketchEditor();
 init();

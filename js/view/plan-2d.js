@@ -23,11 +23,27 @@ function segPath(segs, tx, ty) {
   return d + " Z";
 }
 let VIEW = null;
+let zoom2D = 1, baseViewBox2D = null;
+function applyZoom2D() {
+  const svg = $("view");
+  if (!svg || !baseViewBox2D) return;
+  const [x, y, w, h] = baseViewBox2D;
+  const nw = w / zoom2D, nh = h / zoom2D;
+  svg.setAttribute("viewBox", [x + (w - nw) / 2, y + (h - nh) / 2, nw, nh].join(" "));
+  const label = $("zoom2-label"); if (label) label.textContent = Math.round(zoom2D * 100) + "%";
+}
+function initZoom2D() {
+  const change = factor => { zoom2D = Math.max(0.5, Math.min(2.5, Math.round(zoom2D * factor * 100) / 100)); applyZoom2D(); };
+  if ($("zoom2-in")) $("zoom2-in").onclick = () => change(1.2);
+  if ($("zoom2-out")) $("zoom2-out").onclick = () => change(1 / 1.2);
+  if ($("zoom2-reset")) $("zoom2-reset").onclick = () => { zoom2D = 1; applyZoom2D(); };
+}
 function renderView() {
   const svg = $("view"), c = A.c, P = A.P, F = A.F;
   const Lo = c.out.l, Wo = c.out.w, M = Math.max(24, Lo * 0.05), fs = Math.max(9, Lo / 46), gap = Math.max(16, Wo * 0.07);
   const wx = (c.out.l - c.l) / 2, wy = (c.out.w - c.w) / 2;
   const H = 2 * Wo + gap + 2 * M + fs;
+  baseViewBox2D = [0, 0, Lo + 2 * M, H];
   svg.setAttribute("viewBox", "0 0 " + (Lo + 2 * M).toFixed(1) + " " + H.toFixed(1));
   svg.textContent = "";
   const zones = { lid: { top: M + fs * 0.6 }, body: { top: M + fs * 0.6 + Wo + gap } };
@@ -77,6 +93,8 @@ function renderView() {
 
 // ---------- Перетаскивание и поворот ----------
 let drag = null;
+  applyZoom2D();
+
 function svgPoint(e) {
   const svg = $("view"), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
   return pt.matrixTransform(svg.getScreenCTM().inverse());

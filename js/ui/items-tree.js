@@ -35,7 +35,7 @@ function renderTree() {
   const box = $("tree"); if (!box || box.hidden) return;
   const c = curCase(), P = S.params, F = foamOf(c, P), rank = { ok: 0, warn: 1, err: 2 }, res = A ? A.res : [];
   const sel = selInfo(), selChanged = S.selected !== treeSel;
-  if (sel && selChanged) { setOpen("case", true); setOpen(zoneOf(sel.it), true); setOpen(sel.it.id, true); }
+  if (sel && selChanged) { setOpen("case", true); setOpen(zoneOf(sel.it), true); setOpen(sel.it.id, true); setOpen(sel.it.id + ":params", true); }
   treeSel = S.selected;
   // Дерево перестраивается целиком: запоминаем фокус, курсор и прокрутку, чтобы ввод не сбивался.
   const ae = document.activeElement, fkey = ae && box.contains(ae) && ae.dataset ? ae.dataset.f : null;
@@ -111,69 +111,83 @@ function renderTree() {
     const rs = res.filter(r => r.it === it), w = worst(rs), idx = S.items.indexOf(it);
     const bad = rs.some(r => !r.g || r.d.err), isSel = !!S.selected && S.selected.startsWith(it.id + "#");
     const n = node(parent, it.id, 3, it.name, {
-      color: bad ? RED3 : PAL3[idx % PAL3.length], qty: Math.max(1, it.qty | 0), meta: dimTxt(it), dot: dot(w), sel: isSel, leaf: true,
+      color: bad ? RED3 : PAL3[idx % PAL3.length], qty: Math.max(1, it.qty | 0), meta: dimTxt(it), dot: dot(w), sel: isSel,
       onLabel: () => { if (isSel) { setOpen(it.id, !isOpen(it.id)); renderTree(); } else selectItem(it.id + "#0"); }
     });
-    if (!n.props) return;
-    const p = n.props, f = k => it.id + ":" + k;
-    const nm = inp(f("name"), "text", it.name, "Название", e => { it.name = e.target.value; refresh(); }); nm.className = "nm";
-    prop(p, "Название", nm);
-    const dimIn = (k, i, min, max, lbl) => inp(f(k), "number", it.dim[i], lbl, e => {
-      const v = parseFloat(e.target.value); if (!isFinite(v)) return;
-      it.dim[i] = Math.max(min, Math.min(max, v)); if (it.kind === "cyl" && i === 0) it.dim[1] = it.dim[0];
-      treeLater(() => reflowItem(it));
-    }, { min, max });
-    if (it.kind === "cyl") prop(p, "Ø × длина, мм", dimIn("d0", 0, 5, 2000, "Диаметр"), "×", dimIn("d2", 2, 1, 2000, "Длина"));
-    else prop(p, "Д × Ш × В, мм", dimIn("d0", 0, 5, 2000, "Длина"), "×", dimIn("d1", 1, 5, 2000, "Ширина"), "×", dimIn("d2", 2, 1, 2000, "Высота"));
-    prop(p, "Форма", sel_(f("kind"), [["rect", "Прямоугольный"], ["cyl", "Цилиндр"]], it.kind, "Форма", e => {
-      it.kind = e.target.value; it.dim = [it.dim[0], it.kind === "cyl" ? it.dim[0] : it.dim[1], it.dim[2]];
-      it.orient = "auto"; it.pref = 2; applyOrient(it, 2); if (it.kind === "cyl") it.notch = false; reflowItem(it);
-    }));
-    prop(p, "Количество", inp(f("qty"), "number", it.qty, "Количество", e => {
-      const v = parseInt(e.target.value, 10); if (!isFinite(v)) return; it.qty = Math.max(1, Math.min(50, v)); treeLater(() => reflowItem(it));
-    }, { min: 1, max: 50 }));
-    prop(p, "Где лежит", sel_(f("zone"), [["lid", "Крышка"], ["body", "Основание"]], zoneOf(it), "Где лежит", e => { it.zone = e.target.value; setOpen(it.zone, true); reflowItem(it); }));
-    const os = hEl("select"); os.dataset.f = f("ori"); os.setAttribute("aria-label", "Как класть"); fillOrient(it, os);
-    os.onchange = e => { it.orient = e.target.value; reflowItem(it); };
-    prop(p, "Как класть", os);
-    if (it.kind !== "cyl") {
-      const l = hEl("label", "chk"); l.append(inp(f("notch"), "checkbox", it.notch, "Выемка под палец", e => { it.notch = e.target.checked; reflowItem(it); }), "под палец Ø" + P.notchD + " мм");
-      prop(p, "Выемка", l);
+    if (!n.kids) return;
+    // У узла предмета нет собственной панели: только два смысловых раздела.
+    if (n.props) n.props.remove();
+    const f = k => it.id + ":" + k;
+    const pn = node(n.kids, it.id + ":params", 4, "Параметры предмета", {
+      color: "var(--accent)", meta: "", dot: dot(null), leaf: true
+    });
+    if (pn.props) {
+      const p = pn.props;
+      const nm = inp(f("name"), "text", it.name, "Название", e => { it.name = e.target.value; refresh(); }); nm.className = "nm";
+      prop(p, "Название", nm);
+      const dimIn = (k, i, min, max, lbl) => inp(f(k), "number", it.dim[i], lbl, e => {
+        const v = parseFloat(e.target.value); if (!isFinite(v)) return;
+        it.dim[i] = Math.max(min, Math.min(max, v)); if (it.kind === "cyl" && i === 0) it.dim[1] = it.dim[0];
+        treeLater(() => reflowItem(it));
+      }, { min, max });
+      if (it.kind === "cyl") prop(p, "Ø × длина, мм", dimIn("d0", 0, 5, 2000, "Диаметр"), "×", dimIn("d2", 2, 1, 2000, "Длина"));
+      else prop(p, "Д × Ш × В, мм", dimIn("d0", 0, 5, 2000, "Длина"), "×", dimIn("d1", 1, 5, 2000, "Ширина"), "×", dimIn("d2", 2, 1, 2000, "Высота"));
+      prop(p, "Форма", sel_(f("kind"), [["rect", "Прямоугольный"], ["cyl", "Цилиндр"]], it.kind, "Форма", e => {
+        it.kind = e.target.value; it.dim = [it.dim[0], it.kind === "cyl" ? it.dim[0] : it.dim[1], it.dim[2]];
+        it.orient = "auto"; it.pref = 2; applyOrient(it, 2); if (it.kind === "cyl") it.notch = false; reflowItem(it);
+      }));
+      prop(p, "Количество", inp(f("qty"), "number", it.qty, "Количество", e => {
+        const v = parseInt(e.target.value, 10); if (!isFinite(v)) return; it.qty = Math.max(1, Math.min(50, v)); treeLater(() => reflowItem(it));
+      }, { min: 1, max: 50 }));
     }
-    if (w) prop(p, "Состояние", hEl("span", "chip " + w.level, w.text));
-    const pls = hEl("div", "pls");
-    for (const r of rs) {
-      const row = hEl("div", "pi" + (S.selected === r.key ? " sel" : ""));
-      const no = hEl("button", "no", "№" + (r.n + 1)); no.type = "button"; no.title = "Выделить на плане и в 3D"; no.onclick = () => selectItem(r.key);
-      row.append(no);
-      if (r.g) {
-        const pk = r.g.pocket;
-        const xy = axis => {
-          const lab = hEl("label"), cur = axis === "x" ? pk.x : pk.y;
-          lab.append(axis.toUpperCase(), inp(f("p" + r.n + axis), "number", Math.round(cur), axis.toUpperCase() + " выреза №" + (r.n + 1) + ", мм", e => {
-            const nv = parseFloat(e.target.value); if (!isFinite(nv)) return;
-            const pl = S.place[r.key]; if (!pl) return;
-            S.place[r.key] = Object.assign({}, pl, axis === "x" ? { x: Math.round(pl.x + nv - cur) } : { y: Math.round(pl.y + nv - cur) });
-            S.selected = r.key; refresh();
-          }, null, "change"));
-          return lab;
-        };
-        row.append(xy("x"), xy("y"));
-        if (it.shape !== "cyl") {
-          const rb = hEl("button", "btn sm ghost", r.pl.rot ? "90°" : "0°"); rb.type = "button"; rb.title = "Повернуть на 90°";
-          rb.onclick = () => { selectItem(r.key, false); rotateSelected(); };
-          row.append(rb);
-        }
-        row.append(hEl("span", "dp", "глуб. " + r.d.depth + (r.d.protr ? "+" + r.d.lidDepth : "")));
-      } else row.append(hEl("span", "dp", "не размещён"));
-      row.append(dot(r));
-      pls.append(row);
+
+    const rn = node(n.kids, it.id + ":placement", 4, "Параметры размещения", {
+      color: "var(--accent)", meta: "", dot: dot(w), leaf: true
+    });
+    if (rn.props) {
+      const p = rn.props;
+      prop(p, "Где лежит", sel_(f("zone"), [["lid", "Крышка"], ["body", "Основание"]], zoneOf(it), "Где лежит", e => { it.zone = e.target.value; setOpen(it.zone, true); reflowItem(it); }));
+      const os = hEl("select"); os.dataset.f = f("ori"); os.setAttribute("aria-label", "Как класть"); fillOrient(it, os);
+      os.onchange = e => { it.orient = e.target.value; reflowItem(it); };
+      prop(p, "Как класть", os);
+      if (it.kind !== "cyl") {
+        const l = hEl("label", "chk"); l.append(inp(f("notch"), "checkbox", it.notch, "Выемка под палец", e => { it.notch = e.target.checked; reflowItem(it); }), "под палец Ø" + P.notchD + " мм");
+        prop(p, "Выемка", l);
+      }
+      if (w) prop(p, "Состояние", hEl("span", "chip " + w.level, w.text));
+      const pls = hEl("div", "pls");
+      for (const r of rs) {
+        const row = hEl("div", "pi" + (S.selected === r.key ? " sel" : ""));
+        const no = hEl("button", "no", "№" + (r.n + 1)); no.type = "button"; no.title = "Выделить на плане и в 3D"; no.onclick = () => selectItem(r.key);
+        row.append(no);
+        if (r.g) {
+          const pk = r.g.pocket;
+          const xy = axis => {
+            const lab = hEl("label"), cur = axis === "x" ? pk.x : pk.y;
+            lab.append(axis.toUpperCase(), inp(f("p" + r.n + axis), "number", Math.round(cur), axis.toUpperCase() + " выреза №" + (r.n + 1) + ", мм", e => {
+              const nv = parseFloat(e.target.value); if (!isFinite(nv)) return;
+              const pl = S.place[r.key]; if (!pl) return;
+              S.place[r.key] = Object.assign({}, pl, axis === "x" ? { x: Math.round(pl.x + nv - cur) } : { y: Math.round(pl.y + nv - cur) });
+              S.selected = r.key; refresh();
+            }, null, "change"));
+            return lab;
+          };
+          row.append(xy("x"), xy("y"));
+          if (it.shape !== "cyl") {
+            const rb = hEl("button", "btn sm ghost", r.pl.rot ? "90°" : "0°"); rb.type = "button"; rb.title = "Повернуть на 90°";
+            rb.onclick = () => { selectItem(r.key, false); rotateSelected(); };
+            row.append(rb);
+          }
+          row.append(hEl("span", "dp", "глуб. " + r.d.depth + (r.d.protr ? "+" + r.d.lidDepth : "")));
+        } else row.append(hEl("span", "dp", "не размещён"));
+        row.append(dot(r)); pls.append(row);
+      }
+      if (!rs.length) pls.append(hEl("span", "dp", "пересчитывается…"));
+      propWide(p, "Позиции: X, Y от левого нижнего угла ложемента, мм", pls);
+      const del = hEl("button", "btn sm ghost", it.qty > 1 ? "Удалить позицию (все " + it.qty + " шт.)" : "Удалить позицию"); del.type = "button"; del.style.color = "var(--err)";
+      del.onclick = () => removeItem(it);
+      prop(p, "", del);
     }
-    if (!rs.length) pls.append(hEl("span", "dp", "пересчитывается…"));
-    propWide(p, "Расположение: X, Y от левого нижнего угла ложемента, мм", pls);
-    const del = hEl("button", "btn sm ghost", it.qty > 1 ? "Удалить позицию (все " + it.qty + " шт.)" : "Удалить позицию"); del.type = "button"; del.style.color = "var(--err)";
-    del.onclick = () => removeItem(it);
-    prop(p, "", del);
   }
 
   box.scrollTop = st;
@@ -191,7 +205,7 @@ function renderTree() {
 }
 document.querySelectorAll("#iv button").forEach(b => b.addEventListener("click", () => { S.itemsView = b.dataset.v; saveDraft(); renderItems(); if (A) renderItemStatus(); }));
 $("tree-all").addEventListener("click", () => {
-  const ids = S.items.map(i => i.id);
+  const ids = S.items.flatMap(i => [i.id, i.id + ":params", i.id + ":placement"]);
   S.treeOpen = ids.length && ids.every(isOpen) ? ["case", "lid", "body"] : ["case", "lid", "body", ...ids];
   saveDraft(); renderTree();
 });

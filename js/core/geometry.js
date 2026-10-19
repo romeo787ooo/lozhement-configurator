@@ -26,8 +26,8 @@ function fpDims(it, P, rot) {
 }
 function geom(it, pl, P) {
   const { pw, ph } = pocketSize(it, P), e = notchR(it, P);
-  if (!pl.rot) return { fp: { x: pl.x, y: pl.y, w: pw, h: ph + e }, pocket: { x: pl.x, y: pl.y, w: pw, h: ph }, notch: e ? { cx: pl.x + pw / 2, cy: pl.y + ph, r: e, edge: "top" } : null };
-  return { fp: { x: pl.x, y: pl.y, w: ph + e, h: pw }, pocket: { x: pl.x + e, y: pl.y, w: ph, h: pw }, notch: e ? { cx: pl.x + e, cy: pl.y + pw / 2, r: e, edge: "left" } : null };
+  if (!pl.rot) return { rot: false, fp: { x: pl.x, y: pl.y, w: pw, h: ph + e }, pocket: { x: pl.x, y: pl.y, w: pw, h: ph }, notch: e ? { cx: pl.x + pw / 2, cy: pl.y + ph, r: e, edge: "top" } : null };
+  return { rot: true, fp: { x: pl.x, y: pl.y, w: ph + e, h: pw }, pocket: { x: pl.x + e, y: pl.y, w: ph, h: pw }, notch: e ? { cx: pl.x + e, cy: pl.y + pw / 2, r: e, edge: "left" } : null };
 }
 const r1 = v => Math.round(v * 10) / 10;
 function depthInfo(it, c, P, zone) {
@@ -66,6 +66,13 @@ function rrSegs(r, rad, notch) {
   return segs;
 }
 function pocketSegs(it, g, P) {
+  if (Array.isArray(it.customShape) && it.customShape.length >= 3 && it.shape !== "cyl") {
+    const p = g.pocket, pts = it.customShape;
+    const map = v => it.shape === "cyl" || !g.rot
+      ? { x: p.x + v.x * p.w, y: p.y + v.y * p.h }
+      : { x: p.x + v.y * p.w, y: p.y + (1 - v.x) * p.h };
+    return pts.map((v, i) => { const n = pts[(i + 1) % pts.length], a = map(v), b = map(n); return { t: "L", x1: a.x, y1: a.y, x2: b.x, y2: b.y }; });
+  }
   if (it.shape === "cyl") return [{ t: "C", cx: g.pocket.x + g.pocket.w / 2, cy: g.pocket.y + g.pocket.h / 2, r: g.pocket.w / 2 }];
   return rrSegs(g.pocket, P.toolR, g.notch);
 }
