@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Конструктор ложемента Калибр</title>
+<title>Подбор кейса и конструктор ложемента</title>
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,8 +162,10 @@ details.params summary { cursor: pointer; color: var(--ink-2); font-size: 13px; 
 .ph b { font-weight: 600; color: var(--ink); }
 .ph .sp { flex: 1; }
 .pane.fs { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
-.pane.fs .canvas { flex: 1; display: flex; align-items: center; }
-.pane.fs #view { max-height: none; height: 100%; }
+.pane.fs { height: 100dvh; box-sizing: border-box; overflow: hidden; }
+.pane.fs > .ph { flex: none; }
+.pane.fs .canvas { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
+.pane.fs #view { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
 .pane.fs .c3wrap { flex: 1; height: auto; }
 .c3wrap { position: relative; height: min(64vh, 600px); min-height: 300px; background: var(--canvas); }
 #gl3d { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
@@ -177,6 +179,11 @@ details.params summary { cursor: pointer; color: var(--ink-2); font-size: 13px; 
 .t3 select { padding: 3px 6px; }
 .t3 .mono { min-width: 3ch; }
 .v3rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 10px; padding: 4px 12px 8px; }
+.scene-objects { position: absolute; z-index: 2; top: 8px; left: 8px; max-height: calc(100% - 16px); width: min(220px, 42%); overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 94%, transparent); }
+.scene-objects:not([open]) { width: auto; }
+.scene-objects summary { padding: 8px 10px; cursor: pointer; font-size: 12px; user-select: none; }
+.scene-objects .v3rows { grid-template-columns: minmax(0, 1fr); padding: 0 4px 6px; gap: 2px; }
+.scene-objects[hidden] { display: none; }
 .v3r { display: flex; align-items: center; gap: 6px; padding: 2px 4px; border-radius: 6px; min-width: 0; }
 .v3r.sel { background: var(--accent-soft); }
 .v3r i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
@@ -201,9 +208,23 @@ details.params summary { cursor: pointer; color: var(--ink-2); font-size: 13px; 
 #btn-notch[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
 #sketch-dialog { width:min(760px,calc(100vw - 24px)); max-width:none; border:1px solid var(--line); border-radius:12px; padding:0; background:var(--panel); color:var(--ink); box-shadow:0 20px 70px #0004; }
 #sketch-dialog::backdrop { background:#10182088; }
+.sk-point-menu { position:fixed; z-index:100; min-width:160px; padding:4px; border:1px solid var(--line); border-radius:8px; background:var(--panel); box-shadow:0 8px 24px #0004; }
+.sk-point-menu[hidden] { display:none; }
+.sk-point-menu button { display:block; width:100%; padding:8px 12px; border:0; border-radius:4px; text-align:left; background:transparent; color:var(--ink); cursor:pointer; }
+.sk-point-menu button:hover, .sk-point-menu button:focus-visible { background:var(--accent-soft); }
+.sk-point-menu button:disabled { opacity:.45; cursor:default; }
 .sk-head,.sk-foot { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--line); }
 .sk-head strong { font-size:16px; } .sk-head .sp { flex:1; } .sk-body { padding:14px 16px; }
 #sketch-canvas { display:block; width:100%; height:auto; background:var(--field); border:1px solid var(--line); border-radius:8px; touch-action:none; cursor:crosshair; }
+.sk-canvas-tools { display:flex; align-items:center; flex-wrap:wrap; gap:5px; padding:6px; background:var(--field); border:1px solid var(--line); border-radius:8px; }
+.sk-canvas-tools button { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; }
+.sk-canvas-tools svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.sk-canvas-tools [aria-pressed="true"] { background:var(--accent); color:var(--panel); }
+.sk-canvas-tools .mono { margin-left:auto; font-size:12px; color:var(--ink-2); }
+.sk-tooltip { position:fixed; z-index:110; pointer-events:none; max-width:280px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); box-shadow:0 4px 16px #0004; font-size:12px; line-height:1.4; }
+.case-model-badge { display:inline-block; font-size:10px; color:var(--accent); border:1px solid var(--line); border-radius:4px; padding:1px 3px; vertical-align:middle; }
+.item-hover-tip { position:fixed; z-index:150; pointer-events:none; white-space:pre-line; max-width:320px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); box-shadow:0 6px 24px #0004; font-size:12px; line-height:1.6; }
+.sk-mode-hint { margin:6px 2px; }
 .sk-image-tools { display:grid; gap:8px; padding:10px; margin:0 0 10px; border:1px solid var(--line); border-radius:8px; background:var(--field); }
 .sk-image-tools .row { gap:8px; }
 .sk-image-tools .sp { flex:1; }
@@ -275,6 +296,24 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 .props input.nm { width: 100%; }
 .props select { flex: 1 1 150px; min-width: 0; max-width: 100%; }
 .props .chip { white-space: normal; }
+.props[hidden] { display: none; }
+.tn[data-lv="1"], .tn[data-lv="2"] { display: grid; grid-template-columns: 20px 12px minmax(0,1fr) auto auto auto; column-gap: 6px; row-gap: 0; padding: 4px 6px 5px 2px; }
+.tn[data-lv="1"] .tm, .tn[data-lv="2"] .tm { grid-row: 2; grid-column: 3 / -1; white-space: normal; overflow-wrap: anywhere; font-size: 11px; line-height: 1.5; color: var(--ink-2); }
+.tn[data-lv="1"] .dot, .tn[data-lv="2"] .dot { grid-column: 4; grid-row: 1; }
+.tn[data-lv="1"] .tl, .tn[data-lv="2"] .tl { grid-column: 3; grid-row: 1; padding: 2px; }
+.tn[data-lv="1"] .tw, .tn[data-lv="2"] .tw { grid-column: 1; grid-row: 1; }
+.tn[data-lv="1"] .sw, .tn[data-lv="2"] .sw { grid-column: 2; grid-row: 1; }
+.tn > .tree-action { grid-column: 5; }
+.tn > .tree-action + .tree-action { grid-column: 6; }
+.tree-action { border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--ink-2); font: inherit; font-size: 12px; cursor: pointer; padding: 3px 6px; min-height: 26px; grid-row: 1; }
+.tree-action:hover, .tree-action[aria-expanded="true"] { background: var(--field); border-color: var(--line); color: var(--ink); }
+.tree button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tree-add { padding: 5px 8px; margin-bottom: 4px; }
+.tn[draggable="true"] { cursor: grab; }
+.tn.drop-before { box-shadow: inset 0 2px var(--accent); }
+.tn.drop-after { box-shadow: inset 0 -2px var(--accent); }
+.tn.drop-zone { background: var(--accent-soft); outline: 1px solid var(--accent); }
+.tn[data-lv="2"] { margin-top: 3px; border-top: 1px solid var(--line); border-radius: 0; }
 .pls { display: grid; gap: 2px; width: 100%; }
 .pi { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 2px 4px; border-radius: 5px; }
 .pi.sel { background: var(--accent-soft); }
@@ -282,6 +321,25 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 .pi label { display: inline-flex; gap: 3px; align-items: center; color: var(--ink-3); font-size: 11.5px; }
 .pi .btn { padding: 2px 7px; font: 500 11.5px "IBM Plex Mono", monospace; }
 .pi .dp { font: 11.5px "IBM Plex Mono", monospace; color: var(--ink-3); margin-left: auto; }
+.top { padding-block:14px; gap:12px; }
+.top h1 { font-size:clamp(17px,1.6vw,22px); }
+.top .seg { display:flex; flex-shrink:0; gap:5px; }
+.workspace-icon { display:inline-flex; justify-content:center; align-items:center; width:34px; height:34px; padding:7px!important; }
+.workspace-icon svg,.sidebar-rail svg,.toolbar .tb svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.toolbar { gap:6px; padding:8px 10px; }
+.toolbar .tb { display:flex; align-items:center; gap:6px; min-width:0; }
+.toolbar .tb select { min-width:0; max-width:310px; }
+#s-total .summary { grid-template-columns:minmax(0,1fr); border-radius:6px; overflow:hidden; }
+#s-total .summary > div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; padding:8px 10px; }
+#s-total .summary .v { grid-column:2; grid-row:1 / 3; align-self:center; font-size:14px; }
+#s-total .summary .l { font-size:10px; }
+.sidebar-rail { display:none; }
+.layout.rail:not(.nol) { grid-template-columns:54px 8px minmax(0,1fr); }
+.layout.rail .steps > .step { display:none; }
+.layout.rail .sidebar-rail { display:flex; flex-direction:column; align-items:center; gap:8px; position:sticky; top:12px; padding:8px 4px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+.rail-button { width:40px; height:40px; display:grid; place-items:center; padding:9px; }
+.rail-button:hover,.rail-button:focus-visible { color:var(--accent); background:var(--accent-soft); }
+@media(max-width:980px){.layout.rail:not(.nol){grid-template-columns:54px minmax(0,1fr);} .toolbar .tb select{max-width:220px;}}
 .tree .empty { color: var(--ink-3); font-size: 12.5px; padding: 4px 8px 6px 28px; }
 .zoom-controls { display: inline-flex; align-items: center; gap: 4px; }
 .zoom-controls .btn { min-width: 30px; padding: 4px 7px; }
@@ -292,13 +350,9 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <div class="app">
   <header class="top">
     <div>
-      <h1>Конструктор ложемента</h1>
-      <p>Выберите кейс «Калибр», добавьте предметы, разложите их и отправьте заказ с чертежом.</p>
+      <h1>Подбор кейса и конструктор ложемента</h1>
     </div>
-    <ol class="path" id="path">
-      <li data-p="case">1 Кейс</li><li data-p="items">2 Предметы</li><li data-p="layout">3 Раскладка</li><li data-p="order">4 Заказ</li>
-    </ol>
-    <span class="tag">Прототип · данные кейсов с caserf.ru, 10.2026</span>
+    <span class="seg" role="group" aria-label="Показать или скрыть области"><button type="button" id="t-left" aria-pressed="true" title="Левая панель мастера">Панель</button><button type="button" id="t-2d" aria-pressed="true" title="2D-редактор">План</button><button type="button" id="t-3d" aria-pressed="true" title="3D-просмотр">3D</button></span>
   </header>
 
   <div class="layout">
@@ -351,6 +405,10 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
         </details>
       </section>
 
+      <section class="step" id="s-total">
+        <div class="step-h"><span class="step-n">∑</span><h2>Итого</h2></div>
+        <div class="summary" id="summary"></div>
+      </section>
       <section class="step" id="s-order">
         <div class="step-h"><span class="step-n">04</span><h2>Заказ</h2><span class="step-s" id="ss-order"></span></div>
         <div class="row">
@@ -378,10 +436,8 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
     <dialog id="sketch-dialog" aria-labelledby="sketch-title">
       <div class="sk-head"><strong id="sketch-title">Контур выреза</strong><span class="step-s" id="sketch-item-name"></span><span class="sp"></span><button class="btn sm" type="button" id="sketch-close">Закрыть</button></div>
       <div class="sk-body">
-        <p class="hint">Нарисуйте контур кликами по полю или выберите готовую фигуру. Перетаскивайте точки, чтобы изменить форму.</p>
+        <p class="hint">Перетаскивайте точки, чтобы изменить форму. Близкие точки угла двигаются вместе; Alt — только одна точка. ПКМ — добавить или удалить точку, UNDO. Чтобы нарисовать заново, нажмите «Очистить» и расставьте минимум три точки кликами. После отпускания точки холст автоматически вмещает контур.</p>
         <div class="sk-tools" role="toolbar" aria-label="Инструменты редактора контуров">
-          <button class="btn sm" type="button" data-sk-tool="select" aria-pressed="true">Выбрать</button>
-          <button class="btn sm" type="button" data-sk-tool="draw" aria-pressed="false">Рисовать точки</button>
           <span class="sk-tool-sep"></span>
           <button class="btn sm" type="button" id="sketch-square">□ Прямоугольник</button>
           <button class="btn sm" type="button" id="sketch-circle">○ Круг</button>
@@ -394,6 +450,18 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
           <div class="row"><label for="sketch-image-tolerance">Отделение фона</label><input id="sketch-image-tolerance" type="range" min="10" max="150" step="5" value="55"><output id="sketch-image-tolerance-value">55</output><button class="btn sm primary" type="button" id="sketch-trace-image" disabled>Построить контур вручную</button><button class="btn sm" type="button" id="sketch-image-clear" disabled>Убрать фото</button></div>
           <p class="hint" id="sketch-image-status" aria-live="polite">Запустите carvekit_server.py, загрузите фото и нажмите «ИИ: выделить и построить контур».</p>
         </section>
+        <div class="sk-canvas-tools" role="group" aria-label="Инструменты контура">
+          <button class="btn sm" type="button" data-sk-tool="draw" aria-pressed="false" title="Новая точка — добавление кликами. Esc завершает режим"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="3"/></svg>Новая точка</button>
+          <button class="btn sm" type="button" data-sk-tool="select" aria-label="Move points" aria-pressed="true" title="Перетаскивание точек"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg></button>
+          <button class="btn sm" type="button" id="sketch-undo" disabled title="UNDO — отменить (Ctrl+Z)" aria-label="UNDO"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4L3 9l5 5M3 9h11a6 6 0 0 1 0 12"/></svg></button>
+          <button class="btn sm" type="button" id="sketch-redo" disabled title="REDO — повторить (Ctrl+Y)" aria-label="REDO"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4l5 5-5 5M21 9H10a6 6 0 0 0 0 12"/></svg></button>
+          <button class="btn sm" type="button" id="sketch-zoom-in" title="Приблизить" aria-label="Приблизить"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M6 10h8M10 6v8"/></svg></button>
+          <button class="btn sm" type="button" id="sketch-zoom-out" title="Отдалить" aria-label="Отдалить"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M6 10h8"/></svg></button>
+          <span id="sketch-zoom-value" class="mono">100%</span>
+          <button class="btn sm" type="button" id="sketch-delete-point" disabled title="Удалить точку — удаляет выбранную вершину контура" aria-label="Удалить точку"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4"/><path d="M14 12h7M2 5l4 4M2 19l4-4"/></svg></button>
+          <button class="btn sm" type="button" id="sketch-clear" title="Очистить — удаляет весь контур и включает рисование нового. Можно отменить через UNDO" aria-label="Очистить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
+        </div>
+        <p class="hint sk-mode-hint" id="sketch-mode-hint">Перетаскивайте точки, чтобы изменить форму.</p>
         <svg id="sketch-canvas" viewBox="0 0 440 300" role="img" aria-label="Поле рисования контура выреза">
           <defs><pattern id="sk-grid" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M 8 0 L 0 0 0 8" fill="none" stroke="var(--line)" stroke-width="0.55"/></pattern><marker id="sk-arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse"><path d="M 0 0 L 5 2.5 L 0 5 z" fill="var(--ink-2)"/></marker></defs>
           <rect x="20" y="20" width="400" height="260" rx="3" fill="url(#sk-grid)" stroke="var(--ink-3)" stroke-width="1.2"/>
@@ -402,7 +470,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
         </svg>
         <div class="sk-primary-controls">
           <div class="sk-size-fields"><strong>Границы контура</strong><label>Ширина, мм <input id="sketch-width" type="number" min="1" step="0.5" value="50"></label><label>Высота, мм <input id="sketch-height" type="number" min="1" step="0.5" value="50"></label><button class="btn sm" type="button" id="sketch-set-dimensions">Изменить границы</button></div>
-          <div class="sk-history"><button class="btn sm" type="button" id="sketch-undo" disabled title="Отменить (Ctrl+Z)">↶ Отменить</button><button class="btn sm" type="button" id="sketch-redo" disabled title="Повторить (Ctrl+Y)">↷ Повторить</button><button class="btn sm" type="button" id="sketch-delete-point" disabled>Удалить точку</button><button class="btn sm" type="button" id="sketch-clear">Очистить</button><span class="sk-status" id="sketch-status">Добавьте минимум 3 точки</span></div>
+          <div class="sk-history"><span class="sk-status" id="sketch-status">Добавьте минимум 3 точки</span></div>
         </div>
         <details class="sk-advanced">
           <summary>Дополнительные операции</summary>
@@ -420,13 +488,13 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
     <div class="stage">
       <div class="stage-card">
         <div class="toolbar">
-          <span class="seg" role="group" aria-label="Показать или скрыть области"><button type="button" id="t-left" aria-pressed="true" title="Левая панель мастера">Панель</button><button type="button" id="t-2d" aria-pressed="true" title="2D-редактор">План</button><button type="button" id="t-3d" aria-pressed="true" title="3D-просмотр">3D</button></span>
+
           <button class="btn sm" type="button" id="btn-auto">Авторасстановка</button>
           <button class="btn sm" type="button" id="btn-rot" disabled title="Повернуть выбранный предмет на 90° в плане">Повернуть</button>
           <button class="btn sm" type="button" id="btn-del" disabled title="Удалить выбранный предмет (Del)">Удалить</button>
           <label class="tb">Как класть <select id="sel-ori" disabled aria-label="Как класть выбранный предмет"></select></label>
           <button class="btn sm" type="button" id="btn-notch" aria-pressed="false" disabled title="Выемка под палец">Выемка</button>
-          <button class="btn sm" type="button" id="btn-sketch" disabled title="Нарисовать контур выреза">Рисовать вырез…</button>
+          <button class="btn sm" type="button" id="btn-sketch" disabled title="Редактировать контур выреза">Редактировать контур выреза…</button>
           <span class="sp"></span>
           <span id="status-chips" class="row"></span>
         </div>
@@ -438,10 +506,13 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
           <div class="split" id="sp-v" role="separator" aria-orientation="vertical" aria-label="Ширина областей 2D и 3D"></div>
           <section class="pane" id="p3d">
             <div class="ph"><b>3D-модель</b><span class="step-s" id="v3tag"></span><span class="sp"></span><button class="btn sm ghost" type="button" id="fs3" aria-pressed="false" title="Во весь экран">⛶ Во весь экран</button></div>
-            <div class="c3wrap"><canvas id="gl3d" role="img" aria-label="3D-модель ложемента: крышка и корпус кейса"></canvas><div class="lab" id="v3lab"></div></div>
+            <div class="c3wrap"><canvas id="gl3d" role="img" aria-label="3D-модель ложемента: крышка и корпус кейса"></canvas><div class="lab" id="v3lab"></div><details class="scene-objects" id="v3objects" open><summary title="Свернуть или раскрыть список объектов сцены">Объекты сцены</summary><div class="v3rows" id="v3l"></div></details></div>
             <div class="t3">
               <button class="btn sm" id="v3-human" type="button" aria-pressed="false">Сравнить с человеком</button>
               <span id="v3-human-controls" hidden>
+                <label>Крышка <input id="v3-scale-lid" type="range" min="0" max="135" value="0" aria-label="Угол крышки в сцене с человеком"> <span id="v3-scale-lid-value" class="mono">0°</span></label>
+                <button class="btn sm" type="button" id="v3-scale-open">Открыть</button>
+                <button class="btn sm" type="button" id="v3-scale-close">Закрыть</button>
                 <label>Рост, см <input id="v3-human-height" type="number" min="100" max="230" value="180" step="1" style="width:65px"></label>
                 <button class="btn sm" type="button" data-scale-view="iso">Изометрия</button>
                 <button class="btn sm" type="button" data-scale-view="front">Спереди</button>
@@ -458,7 +529,6 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
               <span class="chk">Сечение <select id="v3x" aria-label="Плоскость сечения"><option value="-1">нет</option><option value="0">по X (поперёк)</option><option value="1">по Y (вдоль)</option><option value="2">по Z (горизонтально)</option></select>
                 <input type="range" id="v3xp" min="0" max="100" value="50" aria-label="Положение сечения"> <button class="btn sm" type="button" id="v3xf" title="Сменить сторону сечения">⇄</button></span>
             </div>
-            <div class="v3rows" id="v3l"></div>
             <p class="note" id="v3n" style="padding:0 12px 8px;margin:0"></p>
           </section>
         </div>
@@ -468,7 +538,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
           <span><i style="border:1.5px dashed var(--dim)"></i>ответный вырез в крышке</span>
           <span><i style="border:2px solid var(--err)"></i>ошибка размещения</span>
         </div>
-        <div class="summary" id="summary"></div>
+
       </div>
     </div>
   </div>
@@ -494,8 +564,10 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/export/order.js"></script>
 <script src="js/ui/suggest.js"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="js/view/foam-fit.js"></script>
 <script src="js/view/view-3d.js"></script>
 <script src="js/view/scale-scene.js"></script>
+<script src="js/ui/item-tooltip.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/view/case-model.js"></script>
 <script src="js/ui/tools.js"></script>
@@ -503,6 +575,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
 <script src="js/ui/sketch-editor.js"></script>
 <script src="js/data/case-mesh-7030.js"></script>
+<script src="js/data/case-mesh-4035.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

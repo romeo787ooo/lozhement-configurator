@@ -102,6 +102,8 @@ function build3(caseMesh) {
   const outerF = shiftP(polyOf(rrSegs({ x: 0, y: 0, w: F.L, h: F.W }, P.cornerR, null)), ox, oy);
   const rO = Math.min(28, Wo * 0.08), trayO = polyOf(rrSegs({ x: 0, y: 0, w: Lo, h: Wo }, rO, null)), trayI = polyOf(rrSegs({ x: wx, y: wy, w: c.l, h: c.w }, Math.min(14, c.w * 0.05), null));
   const hb = flB + c.body, yax = cm ? Wo - cm.d.ax.off : Wo, zax = cm ? hb + cm.d.ax.y : hb, palOf = it => rgb3(PAL3[Math.max(0, S.items.indexOf(it)) % PAL3.length]);
+  m.hinge = [0, yax, zax];
+  m.lidStart = m.lidEnd = 0; m.lidLabels = [];
   const itemMesh = (r, col, draw, anchor) => {
     const it = r.it, a0 = m.p.length / 3, hot = sel === r.key;
     m.col = hot ? lit3(col, 0.5) : col; draw();
@@ -110,6 +112,8 @@ function build3(caseMesh) {
   };
   for (const zone of ["body", "lid"]) {
     if (zone === "lid" && V3.hide.lid) continue;
+    if (zone === "lid") m.lidStart = m.p.length / 3;
+    const labelStart = m.lab.length;
     const flz = zone === "lid" ? flL : flB, depth = zone === "lid" ? c.lid : c.body, ht = flz + depth;
     if (zone === "lid") {
       const phi = V3.lid * Math.PI / 180, s = Math.sin(phi), co = Math.cos(phi);
@@ -126,9 +130,11 @@ function build3(caseMesh) {
       if (mat === "ppe-2c" && za < zb - tb) { m.col = base; wall3(m, poly, za, zb - tb); m.col = topC; wall3(m, poly, zb - tb, zb); }
       else { m.col = mat === "ppe-2c" ? topC : base; wall3(m, poly, za, zb); }
     };
-    m.col = base; fill3(m, outerF, [], z0); wallSplit(outerF, z0, top);
-    m.col = topC; fill3(m, outerF, pk.map(p => p.poly), top);
-    for (const p of pk) { wallSplit(p.poly, top - p.depth, top); m.col = base; fill3(m, p.poly, [], top - p.depth); }
+    fitFoam3(m, !V3.hide.shell && cm ? cm.d : null, zone, top, () => {
+      m.col = base; fill3(m, outerF, [], z0); wallSplit(outerF, z0, top);
+      m.col = topC; fill3(m, outerF, pk.map(p => p.poly), top);
+      for (const p of pk) { wallSplit(p.poly, top - p.depth, top); m.col = base; fill3(m, p.poly, [], top - p.depth); }
+    });
     for (const p of pk) {
       if (!p.r || p.r.d.err || V3.hide.items.has(p.r.it.id)) continue;
       const it = p.r.it, g = p.r.g.pocket, zb = top - p.depth, k = P.clear, cx = ox + g.x + g.w / 2, cy = oy + g.y + g.h / 2;
@@ -140,6 +146,10 @@ function build3(caseMesh) {
         } else if(it.shape==="cyl") cyl3(m,cx,cy,it.l/2,zb,zb+it.h);
         else box3(m,ox+g.x+k,oy+g.y+k,ox+g.x+g.w-k,oy+g.y+g.h-k,zb,zb+it.h);
       }, m.v(cx, cy, zb + it.h));
+    }
+    if (zone === "lid") {
+      m.lidEnd = m.p.length / 3;
+      m.lidLabels = m.lab.slice(labelStart).map(label => ({label, point:label.p.slice()}));
     }
   }
   { const phi = V3.lid * Math.PI / 180, s = Math.sin(phi), co = Math.cos(phi);
@@ -212,7 +222,7 @@ function bounds3(p) {
   V3.lo = lo; V3.hi = hi;
 }
 function fitCam3() {
-  bounds3(V3.mp); const lo = V3.lo, hi = V3.hi;
+  if (!babylonBounds3()) bounds3(V3.mp); const lo = V3.lo, hi = V3.hi;
   V3.tgt = lo.map((v, k) => (v + hi[k]) / 2); V3.dist = Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) * 1.9;
 }
 const EYE3 = on => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>' + (on ? "" : '<path d="M3 3l18 18"/>') + '</svg>';
@@ -252,7 +262,9 @@ async function initBabylon3D() {
     const camera=new BABYLON.ArcRotateCamera("camera",0,1,1000,BABYLON.Vector3.Zero(),scene);
     camera.upVector=new BABYLON.Vector3(0,0,1);
     camera.minZ=.5; camera.maxZ=20000; camera.lowerRadiusLimit=30;
-    camera.attachControl(canvas,true);
+    // Scale wheel movement with distance: scene coordinates are millimetres.
+    camera.wheelDeltaPercentage=0.01;
+    camera.attachControl(canvas,false);
     const light=new BABYLON.HemisphericLight("light",new BABYLON.Vector3(.3,-.4,1),scene);
     light.intensity=.95; light.groundColor=new BABYLON.Color3(.35,.35,.35);
     const material=new BABYLON.StandardMaterial("scene-material",scene);
@@ -293,11 +305,23 @@ function renderBabylon3D() {
     const d=typeof CASE_MESH!=="undefined" && CASE_MESH[S.caseId];
     const m=build3(d?{d}:null);
     b.scene.meshes.slice().forEach(mesh=>mesh.dispose());
+    b.lidPivot?.dispose();
+    b.lidPivot = new BABYLON.TransformNode("lid-hinge",b.scene);
+    b.lidPivot.position = BABYLON.Vector3.FromArray(m.hinge);
+    b.lidAngle = V3.lid; b.lidLabels = m.lidLabels; b.hinge = m.hinge;
+    const attachLid = mesh => {
+      mesh.parent = b.lidPivot;
+      mesh.position = BABYLON.Vector3.FromArray(m.hinge).negate();
+    };
     const addRange=(start,end,key)=>{
       if(end<=start)return;
+      for(const cut of [m.lidStart,m.lidEnd]) {
+        if(start<cut && cut<end){addRange(start,cut,key);addRange(cut,end,key);return;}
+      }
       const colors=[];
       for(let i=start*3;i<end*3;i+=3) colors.push(m.c[i],m.c[i+1],m.c[i+2],1);
-      babylonMesh3(key||"foam",m.p.slice(start*3,end*3),m.n.slice(start*3,end*3),colors,null,key);
+      const mesh=babylonMesh3(key||"foam",m.p.slice(start*3,end*3),m.n.slice(start*3,end*3),colors,null,key);
+      if(start>=m.lidStart && end<=m.lidEnd)attachLid(mesh);
     };
     let cursor=0;
     for(const r of m.ranges){addRange(cursor,r.a);addRange(r.a,r.b,r.key);cursor=r.b;}
@@ -307,16 +331,17 @@ function renderBabylon3D() {
       for(const name of ["base","lid"]) {
         if(name==="lid" && V3.hide.lid)continue;
         const part=d[name], q=new Uint16Array(b64buf(part.v)), pos=[], colors=[];
-        const col=rgb3(caseColor()), U=name==="lid"?m.mesh.lidU:null;
+        const col=rgb3(caseColor()), U=name==="lid"?m.mesh.lidU:null, black=new Set(part.blackVertices||[]);
         for(let i=0;i<q.length;i+=3) {
           const X=part.o[0]+q[i]*d.s,Y=part.o[1]+q[i+1]*d.s,Z=part.o[2]+q[i+2]*d.s;
           const x=X+d.L/2,y=d.W-Math.abs(Z-hinge),z=Y-d.ymin_b;
           pos.push(...(U?[U[0]*x+U[4]*y+U[8]*z+U[12],U[1]*x+U[5]*y+U[9]*z+U[13],U[2]*x+U[6]*y+U[10]*z+U[14]]:[x,y,z]));
-          colors.push(...col,1);
+          colors.push(...(black.has(i/3)?[.025,.025,.025]:col),1);
         }
         const idx=part.w16?new Uint16Array(b64buf(part.i)):new Uint32Array(b64buf(part.i)), normals=[];
         BABYLON.VertexData.ComputeNormals(pos,idx,normals,{useRightHandedSystem:true});
-        babylonMesh3(name,pos,normals,colors,idx);
+        const mesh=babylonMesh3(name,pos,normals,colors,idx);mesh.metadata.occludesLabels=true;
+        if(name==="lid")attachLid(mesh);
       }
     }
     V3.mp=m.p; V3.lab=m.lab; V3.ranges=m.ranges;
@@ -327,6 +352,31 @@ function renderBabylon3D() {
     $("v3n").textContent=m.out.length?"Не вмещаются: "+m.out.join(", "):"Вращение: мышью. Масштаб: колесо. Нажмите на предмет для выделения.";
     b.engine.resize();
   } catch(e){$("v3n").textContent="Ошибка построения 3D: "+e.message;console.error(e);}
+}
+function babylonBounds3() {
+  const b=V3.bjs;
+  if(!b?.ready || !b.scene.meshes.length)return false;
+  const points=[];
+  for(const mesh of b.scene.meshes) {
+    mesh.computeWorldMatrix(true);
+    for(const p of mesh.getBoundingInfo().boundingBox.vectorsWorld)points.push(p.x,p.y,p.z);
+  }
+  bounds3(points);
+  return true;
+}
+function moveLid3() {
+  const b=V3.bjs;
+  if(!b?.ready || !b.lidPivot || (typeof SCALE3!=="undefined" && SCALE3.active)) {
+    render3D(); return;
+  }
+  const angle=(V3.lid-b.lidAngle)*Math.PI/180, co=Math.cos(angle), s=Math.sin(angle);
+  b.lidPivot.rotation.x=-angle;
+  const [,hy,hz]=b.hinge;
+  for(const {label,point:p} of b.lidLabels) {
+    const y=p[1]-hy,z=p[2]-hz;
+    label.p=[p[0],hy+y*co+z*s,hz-y*s+z*co];
+  }
+  babylonBounds3(); V3.slo=V3.lo.slice(); V3.shi=V3.hi.slice();
 }
 function syncBabylonCamera3() {
   const b=V3.bjs;if(!b?.ready)return;
@@ -340,12 +390,34 @@ function updateBabylon3D() {
   const n=[0,0,0];if(sc.ax>=0)n[sc.ax]=sc.flip?-1:1;
   b.scene.clipPlane=sc.ax>=0?new BABYLON.Plane(...n,sc.flip?v:-v):null;
   const cv=$("gl3d"), viewport=b.camera.viewport.toGlobal(cv.clientWidth,cv.clientHeight);
+  // Do no picking while navigating or while labels are disabled. Spread
+  // occlusion checks across frames after the camera settles, then cache them.
+  const hideLabels=()=>{for(const el of V3.labEls||[])if(el.style.display!=="none")el.style.display="none";};
+  if(!V3.labels){hideLabels();b.labelProbe=null;return;}
+  const signature=[...b.camera.position.asArray(),...b.camera.getTarget().asArray(),V3.lid,sc.ax,sc.pos,sc.flip,cv.clientWidth,cv.clientHeight,b.scene.meshes.map(m=>m.uniqueId).join(',')].join('|');
+  const now=performance.now();
+  if(!b.labelProbe || b.labelProbe.signature!==signature || b.labelProbe.labels!==V3.lab){
+    b.labelProbe={signature,labels:V3.lab,changedAt:now,index:0,blocked:new Set()};
+    hideLabels();return;
+  }
+  const probe=b.labelProbe;
+  if(now-probe.changedAt<180)return;
+  if(probe.index<V3.lab.length){
+    const l=V3.lab[probe.index++],origin=b.camera.globalPosition;
+    const delta=BABYLON.Vector3.FromArray(l.p).subtract(origin),distance=delta.length();
+    if(distance>1){
+      const ray=new BABYLON.Ray(origin,delta.scale(1/distance),distance-1);
+      const hit=b.scene.pickWithRay(ray,m=>m.isEnabled()&&m.isVisible&&(m.metadata?.occludesLabels||(!m.metadata?.key&&m.name==='foam')),true);
+      if(hit?.hit)probe.blocked.add(l.key);
+    }
+  }
   V3.lab.forEach((l,i)=>{
     const el=V3.labEls?.[i];if(!el)return;
     const q=BABYLON.Vector3.Project(BABYLON.Vector3.FromArray(l.p),BABYLON.Matrix.Identity(),b.scene.getTransformMatrix(),viewport);
-    const hidden=!V3.labels || q.z<0 || q.z>1 || (sc.ax>=0 && (sc.flip?l.p[sc.ax]<v:l.p[sc.ax]>v));
-    el.style.display=hidden?"none":"";
-    el.style.left=q.x+"px";el.style.top=q.y+"px";
+    const hidden=i>=probe.index || probe.blocked.has(l.key) || q.z<0 || q.z>1 || (sc.ax>=0 && (sc.flip?l.p[sc.ax]<v:l.p[sc.ax]>v));
+    const display=hidden?"none":"",left=q.x+"px",top=q.y+"px";
+    if(el.style.display!==display)el.style.display=display;
+    if(!hidden){if(el.style.left!==left)el.style.left=left;if(el.style.top!==top)el.style.top=top;}
   });
 }
 function render3D() {
@@ -433,10 +505,10 @@ function setView3(on) {
 function initView3() {
   initColors3();
   $("v3t").onchange = e => { V3.labels = e.target.checked; draw3(); };
-  $("v3a").oninput = e => { V3.lid = +e.target.value; $("v3av").textContent = V3.lid + "°"; render3D(); };
+  $("v3a").oninput = e => { V3.lid = +e.target.value; $("v3av").textContent = V3.lid + "°"; moveLid3(); };
   const secUp = () => { V3.sec.ax = +$("v3x").value; V3.sec.pos = +$("v3xp").value; $("v3xp").disabled = $("v3xf").disabled = V3.sec.ax < 0; draw3(); };
   $("v3x").onchange = secUp; $("v3xp").oninput = secUp; $("v3xf").onclick = () => { V3.sec.flip = !V3.sec.flip; secUp(); }; secUp();
   const setLid = a => { V3.lid = a; $("v3a").value = a; $("v3av").textContent = a + "°"; };
   const pre = { iso: [-1.2, 0.6, 100], top: [-Math.PI / 2, 1.55, 100], front: [-Math.PI / 2, 0.12, 100], bottom: [-1.2, -1.2, 0] };
-  document.querySelectorAll("#v3p button").forEach(b => b.onclick = () => { const p = pre[b.dataset.p]; V3.yaw = p[0]; V3.pitch = p[1]; setLid(p[2]); render3D(); fitCam3(); syncBabylonCamera3(); draw3(); });
+  document.querySelectorAll("#v3p button").forEach(b => b.onclick = () => { const p = pre[b.dataset.p]; V3.yaw = p[0]; V3.pitch = p[1]; setLid(p[2]); moveLid3(); fitCam3(); syncBabylonCamera3(); draw3(); });
 }

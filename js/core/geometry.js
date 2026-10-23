@@ -10,11 +10,13 @@ function instances(items) {
   return out;
 }
 function pocketSize(it, P) {
+  if(it.customShape?.length>=3 && it.customPocketScale){const c=P.clear;return {pw:(it.l+2*c)*it.customPocketScale.x,ph:((it.shape==="cyl"?it.l:it.w)+2*c)*it.customPocketScale.y};}
   const c = P.clear;
   if (it.shape === "cyl") { const d = it.l + 2 * c; return { pw: d, ph: d }; }
   return { pw: it.l + 2 * c, ph: it.w + 2 * c };
 }
 function notchR(it, P) {
+  if(it.customShape?.length>=3)return 0;
   if (!it.notch || it.shape !== "rect") return 0;
   const { pw } = pocketSize(it, P);
   const r = Math.min(P.notchD / 2, pw / 2 - P.toolR - 1);
@@ -66,7 +68,7 @@ function rrSegs(r, rad, notch) {
   return segs;
 }
 function pocketSegs(it, g, P) {
-  if (Array.isArray(it.customShape) && it.customShape.length >= 3 && it.shape !== "cyl") {
+  if (Array.isArray(it.customShape) && it.customShape.length >= 3) {
     const p = g.pocket, pts = it.customShape;
     const map = v => it.shape === "cyl" || !g.rot
       ? { x: p.x + v.x * p.w, y: p.y + v.y * p.h }

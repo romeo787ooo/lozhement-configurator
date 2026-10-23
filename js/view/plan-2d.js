@@ -89,6 +89,7 @@ function renderView() {
       }
     }
   }
+  applyZoom2D();
 }
 
 // ---------- Перетаскивание и поворот ----------
@@ -111,7 +112,7 @@ function onDown(e) {
   const key = g.dataset.key, pl = S.place[key]; if (!pl) return;
   selectItem(key);
   const p = svgPoint(e);
-  drag = { key, sx: p.x, sy: p.y, x0: pl.x, y0: pl.y, moved: false };
+  drag = { key, sx: p.x, sy: p.y, x0: pl.x, y0: pl.y, zone: A.res.find(r=>r.key===key).zone, moved: false };
   $("view").setPointerCapture(e.pointerId);
   e.preventDefault();
 }
@@ -120,11 +121,27 @@ function onMove(e) {
   const p = svgPoint(e), dx = p.x - drag.sx, dy = -(p.y - drag.sy);
   if (!drag.moved && Math.hypot(dx, dy) < 1) return;
   drag.moved = true;
-  const pl = S.place[drag.key];
-  S.place[drag.key] = { x: Math.round(drag.x0 + dx), y: Math.round(drag.y0 + dy), rot: pl.rot };
-  A = analyze(curCase(), S.params, S.items, S.place); renderView();
+  drag.target=Object.keys(VIEW.zones).find(z=>{const v=VIEW.zones[z];return p.x>=v.ox&&p.x<=v.ox+A.F.L&&p.y>=v.oy&&p.y<=v.oy+A.F.W;});
+  drag.next={x:Math.round(drag.x0+dx),y:Math.round(drag.y0+dy+(drag.target?VIEW.zones[drag.target].oy-VIEW.zones[drag.zone].oy:0)),rot:S.place[drag.key].rot};
+  const group=Array.from($("view").querySelectorAll('.pk')).find(g=>g.dataset.key===drag.key);
+  if(group){group.setAttribute('transform',`translate(${dx} ${-dy})`);group.style.opacity=drag.target?'0.8':'0.4';}
 }
-function onUp() { if (drag) { drag = null; refresh(); } }
+function transferPlanInstance(key,zone,place) {
+  const [id,nText]=key.split('#'),n=+nText;let item=S.items.find(i=>i.id===id);
+  if(!item)return;
+  if(zoneOf(item)!==zone && item.qty>1){
+    const copy=structuredClone(item);copy.id='i'+uid++;copy.qty=1;
+    for(let j=n;j<item.qty-1;j++){const next=S.place[id+'#'+(j+1)];if(next)S.place[id+'#'+j]=next;else delete S.place[id+'#'+j];}
+    delete S.place[id+'#'+(item.qty-1)];item.qty--;
+    S.items.splice(S.items.indexOf(item)+1,0,copy);item=copy;key=copy.id+'#0';
+  }
+  item.zone=zone;S.place[key]=place;S.selected=key;setOpen(zone,true);
+}
+function onUp(e) {
+  if(!drag)return;
+  if(e?.type!=='pointercancel'&&drag.moved&&drag.target)transferPlanInstance(drag.key,drag.target,drag.next);
+  drag=null;refresh();renderItems();
+}
 function rotateSelected() {
   const key = S.selected, pl = key && S.place[key]; if (!pl) return;
   const r = A.res.find(x => x.key === key); if (!r || r.it.shape === "cyl") return;

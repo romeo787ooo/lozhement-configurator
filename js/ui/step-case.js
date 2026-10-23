@@ -26,6 +26,9 @@ function renderCaseList() {
     b.setAttribute("aria-selected", String(c.id === S.caseId));
     b.innerHTML = '<span class="m"></span><span class="d mono"></span><span class="p"></span>';
     b.children[0].textContent = c.id;
+    if(typeof CASE_MESH!=="undefined"&&CASE_MESH[c.id]){
+      const badge=document.createElement('span');badge.className='case-model-badge';badge.textContent='3D';badge.title='Доступна реальная 3D-модель кейса';badge.setAttribute('aria-label',badge.title);b.children[0].append(' ',badge);
+    }
     b.children[1].textContent = c.l + "×" + c.w + "×" + c.h;
     b.children[2].textContent = c.peli ? "Peli " + c.peli.split(",")[0] : "";
     b.onclick = () => { S.caseId = c.id; renderCaseList(); renderCaseCard(); relayout(); };

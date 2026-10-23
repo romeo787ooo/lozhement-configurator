@@ -61,45 +61,50 @@ function renderTree() {
     li.setAttribute("role", "treeitem"); li.setAttribute("aria-level", lv); li.setAttribute("aria-expanded", String(open));
     if (o.sel) li.setAttribute("aria-selected", "true");
     const row = hEl("div", "tn" + (o.sel ? " sel" : "")); row.dataset.lv = lv;
+    if(lv===2)row.dataset.zone=id;
+    if(lv===3){row.dataset.itemId=id;row.draggable=true;}
     const tw = hEl("button", "tw"); tw.type = "button"; tw.setAttribute("aria-label", (open ? "Свернуть: " : "Развернуть: ") + label);
     tw.onclick = () => { setOpen(id, !open); renderTree(); };
     const sw = hEl("i", "sw" + (lv === 1 ? " case" : "")); sw.style.background = o.color;
     const tl = hEl("button", "tl", label); tl.type = "button"; tl.title = label; tl.onclick = o.onLabel || tw.onclick;
     row.append(tw, sw, tl);
     if (o.qty > 1) row.appendChild(hEl("span", "qb", "×" + o.qty));
-    if (o.meta) row.appendChild(hEl("span", "tm", o.meta));
+    if (o.meta) { const meta=hEl("span", "tm", o.meta); meta.title=o.metaTitle||o.meta; row.appendChild(meta); }
     row.appendChild(o.dot);
     li.appendChild(row); parent.appendChild(li);
-    if (!open) return {};
+    if (!open) return { row };
     const props = hEl("dl", "props"); li.appendChild(props);
     let kids = null;
     if (!o.leaf) { kids = hEl("ul"); kids.setAttribute("role", "group"); li.appendChild(kids); }
-    return { props, kids };
+    return { props, kids, row };
   };
 
   const root = hEl("ul"); box.appendChild(root);
-  const cn = node(root, "case", 1, caseName(c), { color: caseColor(), meta: c.l + "×" + c.w + "×" + c.h, dot: dot(worst(res), A ? (A.errors ? "Нужно исправить: " + A.errors : "Всё помещается") : "") });
+  const cn = node(root, "case", 1, caseName(c), { color: caseColor(), meta: c.l + "×" + c.w + "×" + c.h + " мм внутри", dot: dot(worst(res), A ? (A.errors ? "Нужно исправить: " + A.errors : "Всё помещается") : "") });
+  const action=(row,text,label,fn)=>{const b=hEl("button","tree-action",text);b.type="button";b.title=label;b.setAttribute("aria-label",label);b.onclick=fn;row.append(b);return b;};
+  const info=action(cn.row,"ⓘ","Характеристики кейса",()=>{setOpen("case:info",!isOpen("case:info"));setOpen("case",true);renderTree();});
+  info.setAttribute("aria-expanded",String(isOpen("case:info")));
+  action(cn.row,"Сменить","Сменить кейс",()=>{openStep("s-case");$("q").focus();});
   if (cn.props) {
-    prop(cn.props, "Внутри", c.l + " × " + c.w + " × " + c.h + " мм").classList.add("mono");
-    prop(cn.props, "Крышка / осн.", "глубина " + c.lid + " / " + c.body + " мм");
+    cn.props.hidden=!isOpen("case:info");
     prop(cn.props, "Снаружи", c.out.l + " × " + c.out.w + " × " + c.out.h + " мм").classList.add("mono");
     if (c.peli) prop(cn.props, "Аналог Peli", c.peli);
-    const b = hEl("button", "btn sm", "Сменить кейс"); b.type = "button"; b.onclick = () => { openStep("s-case"); $("q").focus(); };
-    prop(cn.props, "", b);
   }
   if (cn.kids) for (const z of ["lid", "body"]) {
     const its = S.items.filter(it => zoneOf(it) === z), zr = res.filter(r => r.zone === z);
     const pcs = its.reduce((s, it) => s + Math.max(1, it.qty | 0), 0), depth = z === "lid" ? c.lid : c.body;
     const fill = A ? Math.round((z === "lid" ? A.fillLid : A.fillBody) * 100) : 0;
-    const zn = node(cn.kids, z, 2, ZONE_NAME[z], { color: "var(--foam)", meta: its.length ? pcs + " шт · " + fill + "%" : "пусто", dot: dot(worst(zr)) });
+    const ghosts = A && z === "lid" ? A.ghosts.length : 0, miss = zr.filter(r => !r.g).length;
+    const stats=pcs+" шт · "+fill+"%"+(ghosts?" · ответных: "+ghosts:"")+(miss?" · не размещено: "+miss:"");
+    const zn = node(cn.kids, z, 2, ZONE_NAME[z], { color: "var(--foam)", meta: r1(F.L)+"×"+r1(F.W)+"×"+depth+" мм · "+stats, metaTitle:"Ложемент · "+stats+" заполнения", dot: dot(worst(zr)) });
+    const add=action(zn.row,"+","Добавить предмет: "+ZONE_NAME[z],()=>{setOpen(z+":add",!isOpen(z+":add"));setOpen(z,true);renderTree();if(isOpen(z+":add"))box.querySelector('[data-f="add-'+z+'"]').focus();});
+    add.setAttribute("aria-expanded",String(isOpen(z+":add")));
     if (zn.props) {
-      prop(zn.props, "Ложемент", r1(F.L) + " × " + r1(F.W) + " × " + depth + " мм").classList.add("mono");
-      const ghosts = A && z === "lid" ? A.ghosts.length : 0, miss = zr.filter(r => !r.g).length;
-      prop(zn.props, "Вырезов", zr.filter(r => r.g).length + (ghosts ? " + ответных " + ghosts : "") + (miss ? " · не разместились: " + miss : ""));
-      prop(zn.props, "Заполнение", fill + "%");
+      zn.props.hidden=!isOpen(z+":add");
+      zn.props.classList.add("tree-add");
       const ts = sel_("add-" + z, TEMPLATES.map((t, i) => [String(i), t.name]).concat([["custom", "Свой предмет"]]), addTpl[z], "Что добавить в " + ZONE_NAME[z].toLowerCase(), e => { addTpl[z] = e.target.value; });
       const ab = hEl("button", "btn sm", "Добавить"); ab.type = "button"; ab.onclick = () => addItemTo(z, ts.value);
-      prop(zn.props, "Добавить", ts, ab);
+      const controls=prop(zn.props, "", ts, ab); controls.classList.add("wide");controls.previousElementSibling.remove();
     }
     if (zn.kids) {
       if (!its.length) zn.kids.appendChild(hEl("li", "empty", "Пока пусто"));
@@ -204,6 +209,41 @@ function renderTree() {
   $("tree-all").textContent = allIds.length && allIds.every(isOpen) ? "Свернуть предметы" : "Развернуть всё";
 }
 document.querySelectorAll("#iv button").forEach(b => b.addEventListener("click", () => { S.itemsView = b.dataset.v; saveDraft(); renderItems(); if (A) renderItemStatus(); }));
+// A tree row represents the entire quantity; a plan drag represents one instance.
+function moveTreeItem(id,zone,targetId=null,after=false) {
+  const item=S.items.find(i=>i.id===id);if(!item||targetId===id)return;
+  const changed=zoneOf(item)!==zone;
+  S.items=S.items.filter(i=>i!==item);
+  const target=S.items.findIndex(i=>i.id===targetId);
+  const last=S.items.reduce((n,i,k)=>zoneOf(i)===zone?k:n,-1);
+  S.items.splice(target>=0?target+(after?1:0):last+1,0,item);
+  item.zone=zone;setOpen(zone,true);
+  if(changed)reflowItem(item);else refresh();
+  renderItems();
+}
+let treeDragId=null;
+const clearTreeDrop=()=>$("tree").querySelectorAll('.drop-before,.drop-after,.drop-zone').forEach(e=>e.classList.remove('drop-before','drop-after','drop-zone'));
+$("tree").addEventListener("contextmenu",e=>{
+  const row=e.target.closest('[data-item-id]');if(!row)return;
+  e.preventDefault();const id=row.dataset.itemId;
+  showCtx(e.clientX,e.clientY,S.selected?.startsWith(id+'#')?S.selected:id+'#0');
+});
+$("tree").addEventListener("dragstart",e=>{
+  const row=e.target.closest('[data-item-id]');if(!row)return;
+  treeDragId=row.dataset.itemId;e.dataTransfer.setData('text/plain',treeDragId);e.dataTransfer.effectAllowed='move';hideCtx();
+});
+$("tree").addEventListener("dragover",e=>{
+  if(!treeDragId)return;const row=e.target.closest('[data-item-id],[data-zone]');if(!row)return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';clearTreeDrop();
+  row.classList.add(row.dataset.zone?'drop-zone':e.clientY<row.getBoundingClientRect().top+row.offsetHeight/2?'drop-before':'drop-after');
+});
+$("tree").addEventListener("drop",e=>{
+  if(!treeDragId)return;const row=e.target.closest('[data-item-id],[data-zone]');if(!row)return;
+  e.preventDefault();const target=S.items.find(i=>i.id===row.dataset.itemId),zone=row.dataset.zone||zoneOf(target);
+  const after=row.classList.contains('drop-after'),id=treeDragId;treeDragId=null;clearTreeDrop();
+  moveTreeItem(id,zone,target?.id,after);
+});
+$("tree").addEventListener("dragend",()=>{treeDragId=null;clearTreeDrop();});
 $("tree-all").addEventListener("click", () => {
   const ids = S.items.flatMap(i => [i.id, i.id + ":params", i.id + ":placement"]);
   S.treeOpen = ids.length && ids.every(isOpen) ? ["case", "lid", "body"] : ["case", "lid", "body", ...ids];

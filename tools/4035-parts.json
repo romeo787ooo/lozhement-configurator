@@ -1,0 +1,343 @@
+[
+  {
+    "index": 0,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "\u00d3\u00ea\u00eb\u00e0\u00e4\u00ea\u00e0 \u00ea\u00f0\u00fb\u00f8\u00ea\u00e0 4035"
+    ],
+    "group": "excluded",
+    "reason": "lid insert",
+    "bounds": [
+      -215.7785855812429,
+      -148.9383050617429,
+      -51.86803814630702,
+      215.7785855812429,
+      148.9385067696429,
+      -19.999553103957084
+    ]
+  },
+  {
+    "index": 1,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "B"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      79.49886690980001,
+      169.99999990000003,
+      -1.7500000999999967,
+      178.898867109773,
+      173.50000010000002,
+      1.7500001000000038
+    ]
+  },
+  {
+    "index": 2,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TISHOU"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -100.29522322324766,
+      -179.06934330722407,
+      22.770601558927293,
+      100.29522322314764,
+      -148.46196651737654,
+      114.24633763148142
+    ]
+  },
+  {
+    "index": 3,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TOUQIFA_ASM_1",
+      "TOUQIFAZUO_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -17.80296369811807,
+      -162.42322525141068,
+      27.568948068985545,
+      17.914034165312405,
+      -147.2403500064815,
+      63.30296369811809
+    ]
+  },
+  {
+    "index": 4,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TOUQIFA_ASM_1",
+      "TOUQIMO_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -5.411960711233518,
+      -159.7408453412,
+      40.08803928876645,
+      5.411960711233568,
+      -158.7408451412,
+      50.91196071123355
+    ]
+  },
+  {
+    "index": 5,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TOUQIFA_ASM_1",
+      "FANGSHUIJIAOQUAN_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -5.411960711233514,
+      -155.00097536435618,
+      40.08803928876646,
+      5.411960711233564,
+      -153.5009751643562,
+      50.91196071123354
+    ]
+  },
+  {
+    "index": 6,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TOUQIFA_ASM_1",
+      "TOUQIFAGAI_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -15.958858128093064,
+      -163.12164030560396,
+      29.540881433955416,
+      15.814896769656935,
+      -156.21038135177602,
+      61.314738726816294
+    ]
+  },
+  {
+    "index": 7,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1",
+      "TONGYONGSHANGGAI_1"
+    ],
+    "group": "lid",
+    "reason": null,
+    "bounds": [
+      106.50132261684448,
+      -164.28689815517922,
+      -31.981728681069942,
+      154.49867738315552,
+      -150.5299999,
+      1.0000002292610545e-07
+    ]
+  },
+  {
+    "index": 8,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1",
+      "TONGYONGXIAGAI_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      107.49871830697468,
+      -164.41323927942062,
+      -1.0000001139612731e-07,
+      153.50128169302533,
+      -156.899209630181,
+      11.750000100000015
+    ]
+  },
+  {
+    "index": 9,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1",
+      "TONGYONGDAKOU_ASM_1",
+      "TONGDAKOU_RNM_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      112.09622895649079,
+      -177.59767540908618,
+      -20.43772650222065,
+      148.90377103358892,
+      -153.5759102892468,
+      27.840257663052242
+    ]
+  },
+  {
+    "index": 10,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1",
+      "TONGYONGDAKOU_ASM_1",
+      "TONGDAKOUBING_RNM_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      112.03770709475792,
+      -177.51401449064593,
+      -11.40400920305084,
+      148.96234990793207,
+      -152.99694198948876,
+      52.47767636062824
+    ]
+  },
+  {
+    "index": 11,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1_2",
+      "TONGYONGSHANGGAI_1"
+    ],
+    "group": "lid",
+    "reason": null,
+    "bounds": [
+      -154.49867738355553,
+      -164.28689815517922,
+      -31.981728681069942,
+      -106.50132261724448,
+      -150.5299999,
+      1.0000002292610545e-07
+    ]
+  },
+  {
+    "index": 12,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1_2",
+      "TONGYONGXIAGAI_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -153.50128169342534,
+      -164.41323927942062,
+      -1.0000001139612731e-07,
+      -107.49871830737469,
+      -156.899209630181,
+      11.750000100000015
+    ]
+  },
+  {
+    "index": 13,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1_2",
+      "TONGYONGDAKOU_ASM_1_2",
+      "TONGDAKOU_RNM_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -148.90377104390922,
+      -177.59767540908618,
+      -20.43772650222065,
+      -112.09622896681111,
+      -153.5759102892468,
+      27.840257663052242
+    ]
+  },
+  {
+    "index": 14,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "TONGYONGDAKOU00_ASM_1_2",
+      "TONGYONGDAKOU_ASM_1_2",
+      "TONGDAKOUBING_RNM_1"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -148.9622929056421,
+      -177.51401449064593,
+      -11.40400920305084,
+      -112.03765009246794,
+      -152.99694198948876,
+      52.47767636062824
+    ]
+  },
+  {
+    "index": 15,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "\u052a\uc864\ub7a0\ufcad\uf8e0\uea65 4035",
+      "\u052a\uc864\ub7a0\ufcad\uf8e0\uea65 4035"
+    ],
+    "group": "excluded",
+    "reason": "base insert",
+    "bounds": [
+      -216.4682610361523,
+      -151.10208812045227,
+      -2.305869902361272,
+      216.4682610361523,
+      151.10208811575228,
+      116.04137506465227
+    ]
+  },
+  {
+    "index": 16,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "\u052a\uc864\ub7a0\ufcad\uf8e0\uea65 4035",
+      "\u286b\ufae03"
+    ],
+    "group": "excluded",
+    "reason": "cylinder",
+    "bounds": [
+      -173.5000001,
+      -58.000000100031826,
+      -21.000000099999998,
+      173.50000010000005,
+      58.0000000999682,
+      94.00000010000001
+    ]
+  },
+  {
+    "index": 17,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "\u00ca\u00f0\u00fb\u00f8\u00ea\u00e0 4035"
+    ],
+    "group": "lid",
+    "reason": null,
+    "bounds": [
+      -233.1433788975716,
+      -177.68467513445057,
+      -58.263930319063554,
+      233.1433788975715,
+      178.4776471138716,
+      6.41733996901167
+    ]
+  },
+  {
+    "index": 18,
+    "names": [
+      "\u00ca\u00e0\u00eb\u00e8\u00e1\u00f0 4035 \u00f1 \u00f3\u00ea\u00eb\u00e0\u00e4\u00ea\u00ee\u00e9 \u00e1\u00e0\u00eb\u00ee\u00ed 3",
+      "\ufcad\uf8e0\uea65 4035"
+    ],
+    "group": "base",
+    "reason": null,
+    "bounds": [
+      -231.18243334225244,
+      -177.76381092419874,
+      -6.474306138860712,
+      231.18243334224357,
+      178.28561529647376,
+      120.10517706727373
+    ]
+  }
+]

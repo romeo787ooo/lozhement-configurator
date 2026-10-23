@@ -29,7 +29,7 @@ function updateTools() {
   const nb = $("btn-notch"), cyl = !s || s.it.shape === "cyl";
   nb.disabled = cyl; nb.setAttribute("aria-pressed", String(!!(s && s.it.notch && !cyl)));
   $("btn-rot").disabled = !has || cyl;
-  const sk = $("btn-sketch"); if (sk) sk.disabled = !s || cyl;
+  const sk = $("btn-sketch"); if (sk) sk.disabled = !s;
 }
 function actDelete() {
   const s = selInfo(); if (!s) return;
@@ -78,7 +78,7 @@ function showCtx(x, y, key) {
   for (const o of os) mi(o.label + " (" + (o.shape === "cyl" ? "Ø" + o.l : o.l + "×" + o.w) + ", высота " + o.h + ")", () => actOrient(String(o.up)), { checked: it.orient !== "auto" && +it.orient === o.up, disabled: os.length < 2 });
   m.appendChild(document.createElement("hr"));
   mi("Выемка под палец", actNotch, { checked: !!it.notch && !cyl, disabled: cyl });
-  mi("Нарисовать контур выреза…", () => openSketchEditor(), { disabled: cyl });
+  mi("Редактировать контур выреза…", () => openSketchEditor());
   m.appendChild(document.createElement("hr"));
   mi(it.qty > 1 ? "Удалить этот экземпляр" : "Удалить предмет", actDelete, { danger: true });
   m.hidden = false;
@@ -90,7 +90,7 @@ function hideCtx() { $("ctx").hidden = true; }
 function initTools() {
   document.querySelectorAll(".step").forEach(s => {
     const h = s.querySelector(".step-h"); h.setAttribute("role", "button"); h.tabIndex = 0;
-    openStep(s.id, false);
+    openStep(s.id, s.id==='s-total');
     h.onclick = () => openStep(s.id, s.classList.contains("collapsed"));
     h.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); h.click(); } };
   });
