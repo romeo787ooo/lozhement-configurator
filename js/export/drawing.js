@@ -42,7 +42,7 @@ function dxfFor(zone, A, nums) {
     out.push(text(nums.ghostNo[g.key] || "'", g.rect.x + g.rect.w / 2, g.rect.y + g.rect.h / 2));
   }
   const depth = zone === "lid" ? c.lid : c.body;
-  const head = ["999", "Lozhement Kalibr " + latin(c.id) + " " + (zone === "lid" ? "KRYSHKA" : "KORPUS") + " " + r1(F.L) + "x" + r1(F.W) + "x" + depth + " mm. Sloi VYREZ_Dnnn: glubina vyreza nnn mm.",
+  const head = ["999", ...(A.exportTier?["Tier "+(A.exportTier.index+1)+"; bottom >= "+A.exportTier.bottom+" mm; Z="+A.exportTier.offset+" mm", "999"]:[]), "Lozhement Kalibr " + latin(c.id) + " " + (zone === "lid" ? "KRYSHKA" : "KORPUS") + " " + r1(F.L) + "x" + r1(F.W) + "x" + depth + " mm. Sloi VYREZ_Dnnn: glubina vyreza nnn mm.",
     "0", "SECTION", "2", "HEADER", "9", "$ACADVER", "1", "AC1009", "9", "$INSUNITS", "70", "4",
     "9", "$EXTMIN", "10", "0", "20", "0", "9", "$EXTMAX", "10", f(F.L), "20", f(F.W), "0", "ENDSEC",
     "0", "SECTION", "2", "TABLES",
@@ -56,6 +56,7 @@ function dxfFor(zone, A, nums) {
 // ---------- Чертёж SVG ----------
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 function drawingSVG(A, nums, order) {
+  if(hasTiers()&&!A.exportTier)return drawingTiersSVG(A,nums,order);
   const { F, P, c } = A, fs = Math.max(5, Math.min(14, F.L / 70)), pad = fs * 3, x0 = pad + fs * 4;
   const lidTop = pad + fs * 3, bodyTop = lidTop + F.W + fs * 8, tx0 = x0 + F.L + fs * 6, tw = fs * 46, rh = fs * 1.9;
   const rows = [];

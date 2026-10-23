@@ -28,11 +28,17 @@ function fitFoam3(m, data, zone, top, draw) {
     }
     // Retain large planar patches; refine only where the cavity bends.
     const fittedZ = p => Math.max(p[2],floor(p));
-    const bends = () => edges.some(([p,q]) => {
+    const bends = () => {
+      if(data.cavityRefinement){
+        const center=a.map((v,i)=>(v+b[i]+c[i])/3);
+        if(Math.abs(fittedZ(center)-(fittedZ(a)+fittedZ(b)+fittedZ(c))/3)>0.1)return true;
+      }
+      return edges.some(([p,q]) => {
       const mid = p.map((v,i)=>(v+q[i])/2);
       return Math.abs(fittedZ(mid)-(fittedZ(p)+fittedZ(q))/2) > 0.1;
-    });
-    if (length > 9 && !(a[2] >= top && b[2] >= top && c[2] >= top) &&
+      });
+    };
+    if (length > (data.cavityRefinement ? 1 : 9) && !(a[2] >= top && b[2] >= top && c[2] >= top) &&
         (length > 256 || bends())) {
       const [p,q,r] = longest, mid = p.map((v,i)=>(v+q[i])/2);
       emit(p,mid,r); emit(mid,q,r); return;

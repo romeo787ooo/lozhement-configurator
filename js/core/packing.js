@@ -91,7 +91,8 @@ function packInst(P, insts, Wc, Hc, obst) {
 function arrangeBase(c, P, items) {
   const F = foamOf(c, P), b = P.bridge, om = P.margin - b / 2, Wc = F.L - 2 * om, Hc = F.W - 2 * om;
   const all = instances(items), place = {};
-  const body = packInst(P, all.filter(x => x.it.zone !== "lid"), Wc, Hc, []);
+  const body={out:{}};
+  for(const tier of tierList(c)) Object.assign(body.out,packInst(P,all.filter(x=>x.it.zone!=="lid" && tierFor(x.it,c).id===tier.id),Wc,Hc,[]).out);
   for (const k in body.out) place[k] = { x: P.margin + body.out[k].x, y: P.margin + body.out[k].y, rot: body.out[k].rot };
   const obst = [];
   for (const x of all) {

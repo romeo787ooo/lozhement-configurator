@@ -96,8 +96,8 @@ const shiftP = (p, dx, dy) => p.map(v => [v[0] + dx, v[1] + dy]);
 
 function build3(caseMesh) {
   const c = A.c, P = A.P, F = A.F, m = mesh3(), mat = S.material, sel = S.selected;
-  m.ranges = []; m.lab = [];
-  const cm = caseMesh === undefined ? getCaseMesh(S.caseId) : caseMesh, Lo = c.out.l, Wo = cm ? cm.d.W : c.out.w, flP = Math.max(4, (c.out.h - c.h) / 2), flB = cm ? -cm.d.ymin_b - c.body : flP, flL = cm ? cm.d.ymax_l - c.lid : flP, wx = (Lo - c.l) / 2, wy = (Wo - c.w) / 2, ox = wx + P.fit, oy = wy + P.fit;
+  m.ranges = []; m.lab = []; m.tierRanges=[];
+  const cm = caseMesh === undefined ? getCaseMesh(S.caseId) : caseMesh, Lo = cm ? cm.d.L : c.out.l, Wo = cm ? cm.d.W : c.out.w, flP = Math.max(4, (c.out.h - c.h) / 2), flB = cm ? -cm.d.ymin_b - c.body : flP, flL = cm ? cm.d.ymax_l - c.lid : flP, wx = (Lo - c.l) / 2, wy = (Wo - c.w) / 2, ox = wx + P.fit, oy = wy + P.fit;
   const base = rgb3(FOAM3[mat]), topC = mat === "ppe-2c" ? rgb3("#2f5fd0") : base, shellC = rgb3(caseColor());
   const outerF = shiftP(polyOf(rrSegs({ x: 0, y: 0, w: F.L, h: F.W }, P.cornerR, null)), ox, oy);
   const rO = Math.min(28, Wo * 0.08), trayO = polyOf(rrSegs({ x: 0, y: 0, w: Lo, h: Wo }, rO, null)), trayI = polyOf(rrSegs({ x: wx, y: wy, w: c.l, h: c.w }, Math.min(14, c.w * 0.05), null));
@@ -110,27 +110,29 @@ function build3(caseMesh) {
     m.ranges.push({ key: r.key, a: a0, b: m.p.length / 3 });
     m.lab.push({ key: r.key, text: it.name + (it.qty > 1 ? " · " + (r.n + 1) : ""), p: anchor, bad: r.level === "err", hot });
   };
-  for (const zone of ["body", "lid"]) {
+  for (const entry of [...tierList(c).map(t=>({zone:'body',tier:hasTiers()?t:null})),{zone:'lid',tier:null}]) {
+    const {zone,tier}=entry;let tierStart=m.p.length/3;
     if (zone === "lid" && V3.hide.lid) continue;
     if (zone === "lid") m.lidStart = m.p.length / 3;
     const labelStart = m.lab.length;
-    const flz = zone === "lid" ? flL : flB, depth = zone === "lid" ? c.lid : c.body, ht = flz + depth;
+    const flz = zone === "lid" ? flL : flB, depth = zone === "lid" ? c.lid : tier?tier.thickness:c.body, ht = flz + depth;
     if (zone === "lid") {
       const phi = V3.lid * Math.PI / 180, s = Math.sin(phi), co = Math.cos(phi);
       m.T = (x, y, z) => { const dy = Wo - y - yax, dz = hb + ht - z - zax; return [x, yax + dy * co + dz * s, zax - dy * s + dz * co]; };
     } else m.T = null;
-    const z0 = V3.hide.shell ? 0 : flz, top = z0 + depth;
-    if (!V3.hide.shell && !cm) {
-      m.col = shellC; fill3(m, trayO, [], 0); wall3(m, trayO, 0, ht); fill3(m, trayO, [trayI], ht); wall3(m, trayI, flz, ht); fill3(m, trayI, [], flz);
+    const z0 = (V3.hide.shell ? 0 : flz)+(tier?tier.offset:0), top = z0 + depth;
+    if (!V3.hide.shell && !cm && (!tier||tier.index===0)) {
+      m.col = shellC; const shellHt=zone==='body'?hb:ht; fill3(m, trayO, [], 0); wall3(m, trayO, 0, shellHt); fill3(m, trayO, [trayI], shellHt); wall3(m, trayI, flz, shellHt); fill3(m, trayI, [], flz);
     }
+    if(tier)tierStart=m.p.length/3;
     const pk = [];
-    for (const r of A.res) if (r.g && r.zone === zone && r.d.depth > 0) pk.push({ r, poly: shiftP(polyOf(pocketSegs(r.it, r.g, P)), ox, oy), depth: r.d.depth });
+    for (const r of A.res) if (r.g && r.zone === zone && (!tier||r.tierId===tier.id) && r.d.depth > 0) pk.push({ r, poly: shiftP(polyOf(pocketSegs(r.it, r.g, P)), ox, oy), depth: r.d.depth });
     if (zone === "lid") for (const g of A.ghosts) if (g.depth > 0) pk.push({ poly: shiftP(polyOf(g.it.shape === "cyl" ? [{ t: "C", cx: g.rect.x + g.rect.w / 2, cy: g.rect.y + g.rect.h / 2, r: g.rect.w / 2 }] : rrSegs(g.rect, P.toolR, null)), ox, oy), depth: g.depth });
     const tb = Math.min(5, depth), wallSplit = (poly, za, zb) => {
       if (mat === "ppe-2c" && za < zb - tb) { m.col = base; wall3(m, poly, za, zb - tb); m.col = topC; wall3(m, poly, zb - tb, zb); }
       else { m.col = mat === "ppe-2c" ? topC : base; wall3(m, poly, za, zb); }
     };
-    fitFoam3(m, !V3.hide.shell && cm ? cm.d : null, zone, top, () => {
+    fitFoam3(m, !V3.hide.shell && cm ? cm.d : null, zone, tier?hb:top, () => {
       m.col = base; fill3(m, outerF, [], z0); wallSplit(outerF, z0, top);
       m.col = topC; fill3(m, outerF, pk.map(p => p.poly), top);
       for (const p of pk) { wallSplit(p.poly, top - p.depth, top); m.col = base; fill3(m, p.poly, [], top - p.depth); }
@@ -147,6 +149,7 @@ function build3(caseMesh) {
         else box3(m,ox+g.x+k,oy+g.y+k,ox+g.x+g.w-k,oy+g.y+g.h-k,zb,zb+it.h);
       }, m.v(cx, cy, zb + it.h));
     }
+    if(tier){m.tierRanges.push({id:tier.id,a:tierStart,b:m.p.length/3});for(const label of m.lab.slice(labelStart)){label.tierId=tier.id;label.baseZ=label.p[2];}}
     if (zone === "lid") {
       m.lidEnd = m.p.length / 3;
       m.lidLabels = m.lab.slice(labelStart).map(label => ({label, point:label.p.slice()}));
@@ -239,8 +242,18 @@ function renderRows3() {
   row("Кейс (корпус и крышка)", caseColor(), !V3.hide.shell, tg(() => { V3.hide.shell = !V3.hide.shell; }));
   row("Крышка (вместе с ложементом)", "#6b757e", !V3.hide.lid, tg(() => { V3.hide.lid = !V3.hide.lid; }));
   const bad = new Set(A.res.filter(r => !r.g || r.d.err).map(r => r.it.id));
-  for (const it of S.items) row(it.name + (it.qty > 1 ? " × " + it.qty : "") + (bad.has(it.id) ? " (не вмещается)" : ""), bad.has(it.id) ? RED3 : PAL3[S.items.indexOf(it) % PAL3.length], !V3.hide.items.has(it.id),
+  const groups=hasTiers()?['lid',...tierList().slice().reverse().map(t=>t.id)]:[null];
+  for(const id of groups){
+    if(id&&id!=='lid'){
+      V3.hiddenTiers??=new Set();const title=S.tiers.find(t=>t.id===id).name;
+      row(title,'var(--foam)',!V3.hiddenTiers.has(id),()=>{V3.hiddenTiers.has(id)?V3.hiddenTiers.delete(id):V3.hiddenTiers.add(id);applyTierScene();renderRows3();},()=>selectTier(id));
+    }
+    for (const it of S.items.filter(it=>!id||levelOf(it)===id)) {
+    row(it.name + (it.qty > 1 ? " × " + it.qty : "") + (bad.has(it.id) ? " (не вмещается)" : ""), bad.has(it.id) ? RED3 : PAL3[S.items.indexOf(it) % PAL3.length], !V3.hide.items.has(it.id),
     tg(() => { V3.hide.items.has(it.id) ? V3.hide.items.delete(it.id) : V3.hide.items.add(it.id); }), () => selectItem(it.id + "#0"), !!S.selected && S.selected.startsWith(it.id + "#"));
+    if(hasTiers())box.lastElementChild.style.marginLeft='12px';
+    }
+  }
 }
 function renderLabels3() {
   const box = $("v3lab"); box.textContent = "";
@@ -310,18 +323,20 @@ function renderBabylon3D() {
     b.lidPivot.position = BABYLON.Vector3.FromArray(m.hinge);
     b.lidAngle = V3.lid; b.lidLabels = m.lidLabels; b.hinge = m.hinge;
     const attachLid = mesh => {
+      mesh.metadata.zone="lid";
       mesh.parent = b.lidPivot;
       mesh.position = BABYLON.Vector3.FromArray(m.hinge).negate();
     };
     const addRange=(start,end,key)=>{
       if(end<=start)return;
-      for(const cut of [m.lidStart,m.lidEnd]) {
+      for(const cut of [m.lidStart,m.lidEnd,...m.tierRanges.flatMap(t=>[t.a,t.b])]) {
         if(start<cut && cut<end){addRange(start,cut,key);addRange(cut,end,key);return;}
       }
       const colors=[];
       for(let i=start*3;i<end*3;i+=3) colors.push(m.c[i],m.c[i+1],m.c[i+2],1);
       const mesh=babylonMesh3(key||"foam",m.p.slice(start*3,end*3),m.n.slice(start*3,end*3),colors,null,key);
       if(start>=m.lidStart && end<=m.lidEnd)attachLid(mesh);
+      const tier=m.tierRanges.find(t=>start>=t.a&&end<=t.b);if(tier)mesh.metadata.tierId=tier.id;else if(start<m.lidStart&&!key)mesh.metadata.shell=true;
     };
     let cursor=0;
     for(const r of m.ranges){addRange(cursor,r.a);addRange(r.a,r.b,r.key);cursor=r.b;}
@@ -347,7 +362,7 @@ function renderBabylon3D() {
     V3.mp=m.p; V3.lab=m.lab; V3.ranges=m.ranges;
     bounds3(m.p); V3.slo=V3.lo.slice(); V3.shi=V3.hi.slice();
     if(b.caseId!==S.caseId){b.caseId=S.caseId;fitCam3();syncBabylonCamera3();}
-    renderRows3();renderLabels3();
+    renderRows3();renderLabels3();applyTierScene();
     $("v3tag").textContent="Babylon.js · "+(b.engine instanceof BABYLON.WebGPUEngine?"WebGPU":"WebGL");
     $("v3n").textContent=m.out.length?"Не вмещаются: "+m.out.join(", "):"Вращение: мышью. Масштаб: колесо. Нажмите на предмет для выделения.";
     b.engine.resize();
@@ -414,7 +429,7 @@ function updateBabylon3D() {
   V3.lab.forEach((l,i)=>{
     const el=V3.labEls?.[i];if(!el)return;
     const q=BABYLON.Vector3.Project(BABYLON.Vector3.FromArray(l.p),BABYLON.Matrix.Identity(),b.scene.getTransformMatrix(),viewport);
-    const hidden=i>=probe.index || probe.blocked.has(l.key) || q.z<0 || q.z>1 || (sc.ax>=0 && (sc.flip?l.p[sc.ax]<v:l.p[sc.ax]>v));
+    const hidden=(l.tierId&&V3.hiddenTiers?.has(l.tierId)) || (hasTiers()&&!l.tierId&&$('tier-scene-mode')?.value==='selected'&&!['lid','all'].includes(S.activeTier)) || (l.tierId && $('tier-scene-mode')?.value==='selected' && S.activeTier!=='all' && l.tierId!==S.activeTier) || i>=probe.index || probe.blocked.has(l.key) || q.z<0 || q.z>1 || (sc.ax>=0 && (sc.flip?l.p[sc.ax]<v:l.p[sc.ax]>v));
     const display=hidden?"none":"",left=q.x+"px",top=q.y+"px";
     if(el.style.display!==display)el.style.display=display;
     if(!hidden){if(el.style.left!==left)el.style.left=left;if(el.style.top!==top)el.style.top=top;}

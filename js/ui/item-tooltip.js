@@ -7,6 +7,7 @@ function itemTipText(key){
  return [it.name+(it.qty>1?' · экземпляр '+(r.n+1)+' из '+it.qty:''),
   'Предмет: '+[it.l,it.w,it.h].map(r1).join(' × ')+' мм',
   'Отделение: '+(r.zone==='lid'?'крышка':'основание'),
+  hasTiers()&&r.zone==='body'?'Ярус: '+levelName(it)+' · от дна '+r1(tierFor(it).offset)+' мм':'',
   p?'Вырез: '+[p.w,p.h].map(r1).join(' × ')+' мм · глубина '+r.d.depth+' мм':'Не размещён',
   p?'Позиция X: '+r1(p.x)+' · Y: '+r1(p.y)+' мм · поворот '+(r.pl.rot||0)+'°':'',
   r.text].filter(Boolean).join('\n');

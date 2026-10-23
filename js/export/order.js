@@ -13,22 +13,24 @@ function orderText(A, nums, order, q) {
   L.push("Заказ ложемента " + order.no + " от " + order.date, "");
   L.push("Кейс: " + caseName(c) + " (внутри " + c.l + "×" + c.w + "×" + c.h + " мм)" + (S.needCase ? ", кейс тоже нужен" : ", кейс у заказчика есть"));
   L.push("Материал: " + MATERIALS[S.material].name, "Количество комплектов: " + q.qty);
-  L.push("Ложемент корпуса: " + r1(F.L) + "×" + r1(F.W) + "×" + c.body + " мм; крышки: " + r1(F.L) + "×" + r1(F.W) + "×" + c.lid + " мм", "");
+  L.push((hasTiers()?"Габарит пакета ярусов: ":"Ложемент корпуса: ") + r1(F.L) + "×" + r1(F.W) + "×" + (hasTiers()?tierHeight():c.body) + " мм; крышки: " + r1(F.L) + "×" + r1(F.W) + "×" + c.lid + " мм", "");
   L.push("Вырезы:");
+  if(hasTiers())for(const [i,t] of tierList().entries())L.push('Ярус '+(i+1)+' снизу: '+t.name+'; толщина '+t.thickness+' мм; дно ≥ '+t.bottom+' мм; отметка '+r1(t.offset)+' мм; зазор сверху '+t.gap+' мм. Файл yarus-'+(i+1)+'.dxf');
   for (const { no, r } of nums.list) L.push("  " + no + ". " + r.it.name + " — предмет " + (r.it.shape === "cyl" ? "Ø" + r.it.l : r.it.l + "×" + r.it.w) + "×" + r.it.h + " мм, вырез " + sizeTxt(r.it, P) + ", глубина " + r.d.depth + " мм, " + (r.zone === "lid" ? "крышка" : "корпус") + (notchR(r.it, P) ? ", выемка под палец" : ""));
   for (const g of A.ghosts) L.push("  " + nums.ghostNo[g.key] + " ответный вырез в крышке под «" + g.it.name + "», глубина " + g.depth + " мм");
+  if(hasTiers())for(const {no,r} of nums.list)L.push('Размещение выреза '+no+': '+levelName(r.it));
   L.push("", "Оценка (условные тарифы): комплект " + fmt(q.unit) + " ₽, подготовка " + fmt(q.setup) + " ₽, итого " + fmt(q.total) + " ₽");
   L.push("", "Контакты: " + S.form.name + "; " + S.form.contact + (S.form.org ? "; " + S.form.org : ""));
   if (S.form.comment) L.push("Комментарий: " + S.form.comment);
-  L.push("", "Файлы: korpus.dxf и kryshka.dxf — контуры для станка (мм, слой VYREZ_Dnnn = глубина nnn мм), chertezh.svg — чертёж с таблицей вырезов.");
+  L.push("", "Файлы: "+(hasTiers()?"yarus-N.dxf (номер снизу)":"korpus.dxf")+" и kryshka.dxf — контуры для станка (мм, слой VYREZ_Dnnn = глубина от верха соответствующего ложемента), chertezh.svg — чертёж с таблицей вырезов.");
   return L.join("\r\n");
 }
 function orderJSON(A, nums, order, q) {
   const { F, P, c } = A;
   return JSON.stringify({
     order: order.no, date: order.date, case: { model: c.id, inner: [c.l, c.w, c.h], lid: c.lid, body: c.body }, needCase: S.needCase,
-    material: MATERIALS[S.material].name, qty: q.qty, foam: { length: r1(F.L), width: r1(F.W) }, params: S.params,
-    pockets: nums.list.map(({ no, r }) => ({ no, item: r.it.name, shape: r.it.shape, item_mm: [r.it.l, r.it.w, r.it.h], zone: r.zone, x: r1(r.g.pocket.x), y: r1(r.g.pocket.y), w: r1(r.g.pocket.w), h: r1(r.g.pocket.h), depth: r.d.depth, notch: !!notchR(r.it, P), rotated: !!r.pl.rot }))
+    tiers:hasTiers()?tierList():undefined, material: MATERIALS[S.material].name, qty: q.qty, foam: { length: r1(F.L), width: r1(F.W) }, params: S.params,
+    pockets: nums.list.map(({ no, r }) => ({ no, item: r.it.name, shape: r.it.shape, item_mm: [r.it.l, r.it.w, r.it.h], zone: r.zone, tierId:r.tierId, tierName:r.zone==='body'?levelName(r.it):null, x: r1(r.g.pocket.x), y: r1(r.g.pocket.y), w: r1(r.g.pocket.w), h: r1(r.g.pocket.h), depth: r.d.depth, notch: !!notchR(r.it, P), rotated: !!r.pl.rot }))
       .concat(A.ghosts.map(g => ({ no: nums.ghostNo[g.key], item: g.it.name, zone: "lid", counter: true, x: r1(g.rect.x), y: r1(g.rect.y), w: r1(g.rect.w), h: r1(g.rect.h), depth: g.depth }))),
     estimate: { unit: Math.round(q.unit), setup: q.setup, total: Math.round(q.total) },
     contact: S.form
@@ -56,7 +58,7 @@ function updateDl() {
   const b = $("btn-svg"); b.disabled = !DL; b.title = DL ? "" : "Скачивание недоступно в этом просмотре";
   const z = $("btn-zip"); if (z) { z.disabled = !DL; z.title = b.title; }
 }
-function say(where, cls, text) { const m = $(where); m.innerHTML = '<div class="msg ' + cls + '"></div>'; m.firstChild.textContent = text; }
+function say(where, cls, text) { const m = $(where)||$('order-msg'); if(!m)return; m.innerHTML = '<div class="msg ' + cls + '"></div>'; m.firstChild.textContent = text; }
 async function saveFile(name, data, where) {
   if (!DL) { say(where, "err", "Скачивание недоступно в этом просмотре. Откройте прототип на claude.ai."); return; }
   try { await DL.save({ filename: name, data }); say(where, "ok", "Файл " + name + " передан на сохранение."); }
@@ -67,9 +69,13 @@ function exportSvg() {
   saveFile("chertezh-lozhement-" + latin(A.c.id) + ".svg", drawingSVG(A, nums, order), "order-msg");
 }
 async function exportZip() {
+  if(hasTiers()&&A.errors){say('zip-msg','err','Исправьте ошибки размещения и высоты ярусов перед выгрузкой производственных файлов.');return;}
   if (!window.JSZip) { say("zip-msg", "err", "Не загрузилась библиотека архивов. Скачайте чертёж отдельно кнопкой «Скачать чертёж»."); return; }
   const nums = numbering(A), order = orderInfo(), q = quote(A), zip = new window.JSZip();
-  zip.file("korpus.dxf", dxfFor("body", A, nums));
+  if(hasTiers())for(const [i,t] of tierList().entries()){
+    const ta=tierAnalysis(A,t),tn={...nums,list:nums.list.filter(x=>x.r.tierId===t.id)};
+    zip.file('yarus-'+(i+1)+'.dxf',dxfFor('body',ta,tn));
+  }else zip.file("korpus.dxf", dxfFor("body", A, nums));
   zip.file("kryshka.dxf", dxfFor("lid", A, nums));
   zip.file("chertezh.svg", drawingSVG(A, nums, order));
   zip.file("zakaz.txt", "﻿" + orderText(A, nums, order, q));

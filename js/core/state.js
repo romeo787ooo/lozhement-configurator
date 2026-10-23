@@ -21,5 +21,6 @@ try {
 } catch (e) { /* черновик недоступен — работаем с примером */ }
 S.items.forEach(ensureOrient);
 function saveDraft() {
+  if(typeof scheduleProjectSave==='function' && projectId){scheduleProjectSave();return;}
   try { localStorage.setItem(STORE, JSON.stringify(Object.assign({}, S, { submitted: null }))); } catch (e) { /* без черновика */ }
 }

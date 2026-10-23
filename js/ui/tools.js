@@ -50,7 +50,7 @@ function reflowItem(it) {
   const keep = it.up, ups = it.orient === "auto" ? [keep, ...orientsOf(it).map(o => o.up).filter(u => u !== keep)] : [+it.orient];
   for (const up of ups) {
     applyOrient(it, up);
-    const obst = others.filter(x => zn(x.it.zone) === zn(it.zone) && S.place[x.key]).map(cell);
+    const obst = others.filter(x => levelOf(x.it) === levelOf(it) && S.place[x.key]).map(cell);
     if (zn(it.zone) === "lid") for (const x of others) {
       if (zn(x.it.zone) === "lid" || !S.place[x.key] || !depthInfo(x.it, c, P, "body").protr) continue;
       const m = mirrorRect(geom(x.it, S.place[x.key], P).pocket, F.W);
@@ -59,7 +59,7 @@ function reflowItem(it) {
     const r = packInst(P, mine, Wc, Hc, obst);
     if (!r.miss.length) { for (const k in r.out) S.place[k] = { x: P.margin + r.out[k].x, y: P.margin + r.out[k].y, rot: r.out[k].rot }; refresh(); return; }
   }
-  relayout();
+  if(hasTiers()){for(const x of mine)delete S.place[x.key];refresh();}else relayout();
 }
 function showCtx(x, y, key) {
   selectItem(key); const s = selInfo(), m = $("ctx"); if (!s) return;
@@ -71,6 +71,7 @@ function showCtx(x, y, key) {
     b.onclick = () => { hideCtx(); fn(); }; m.appendChild(b);
   };
   const hd = t => { const d = document.createElement("div"); d.className = "ctx-h"; d.textContent = t; m.appendChild(d); };
+  if(hasTiers()){hd("Ярус / размещение");for(const [id,name] of [["lid","Крышка"],...tierList().map(t=>[t.id,t.name])])mi(name,()=>moveInstanceTier(key,id),{checked:levelOf(it)===id});}
   hd(it.name + (it.qty > 1 ? " · " + (s.n + 1) + " из " + it.qty : ""));
   mi("Повернуть на 90°", rotateSelected, { disabled: cyl || !S.place[s.key] });
   hd("Как класть");
@@ -99,6 +100,7 @@ function initTools() {
   document.addEventListener("pointerdown", e => { if (!$("ctx").hidden && !e.target.closest("#ctx")) hideCtx(); });
   addEventListener("resize", hideCtx); addEventListener("scroll", hideCtx, true);
   document.addEventListener("keydown", e => {
+    if(document.querySelector('dialog[open]'))return;
     if (typeof sketchIsOpen === "function" && sketchIsOpen()) return;
     if (e.key === "Escape") hideCtx();
     if ((e.key === "Delete" || e.key === "Backspace") && S.selected && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName) && !$("ctx").contains(document.activeElement)) { e.preventDefault(); actDelete(); }

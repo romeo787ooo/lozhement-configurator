@@ -9,6 +9,7 @@ function renderStatus() {
   else if (A.errors) add("err", "Нужно исправить: " + A.errors);
   else add("ok", "Всё помещается");
   if (A.warns) add("warn", "Ответных вырезов в крышке: " + A.warns);
+  for(const error of A.tierErrors||[])add('err',error);
 }
 function renderSummary() {
   const q = quote(A), el = $("summary");
@@ -18,6 +19,13 @@ function renderSummary() {
     ["Вырезов", String(A.res.filter(r => r.g).length + A.ghosts.length), "из них ответных " + A.ghosts.length],
     ["Оценка за комплект", fmt(q.unit) + " ₽", "без подготовки и кейса"]
   ];
+  if(hasTiers()){
+    cells.splice(1,1,['Ярусы основания',S.tiers.length+' · '+r1(tierHeight())+' / '+A.c.body+' мм','Свободно по высоте: '+r1(Math.max(0,A.c.body-tierHeight()))+' мм']);
+    for(const t of tierList()){
+      const area=A.res.filter(r=>r.g&&r.tierId===t.id).reduce((n,r)=>n+r.g.pocket.w*r.g.pocket.h,0);
+      cells.push([t.name,Math.round(100*area/(A.F.L*A.F.W))+'%',t.thickness+' мм · дно '+t.bottom+' мм']);
+    }
+  }
   el.textContent = "";
   for (const [l, v, s] of cells) { const d = document.createElement("div"); d.innerHTML = '<div class="l"></div><div class="v"></div><div class="s"></div>'; d.children[0].textContent = l; d.children[1].textContent = v; d.children[2].textContent = s; el.appendChild(d); }
 }

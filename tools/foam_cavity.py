@@ -2,10 +2,14 @@
 import numpy as np
 
 
-def cavity_grid(vertices, faces, direction, step=2):
+def cavity_grid(vertices, faces, direction, step=2, bounds=None, margin_cells=1):
     # Both halves are stored with their opening at Y=0.
     origin = [-220, -154]
     nx, ny = 221, 155
+    if bounds is not None:
+        low, high = np.asarray(bounds)
+        origin = (np.floor(low / step) * step).tolist()
+        nx, ny = (np.ceil((high - origin) / step).astype(int) + 1).tolist()
     depth = np.full((ny, nx), np.inf)
     for tri in vertices[faces]:
         xy = tri[:, [0, 2]]
@@ -29,7 +33,8 @@ def cavity_grid(vertices, faces, direction, step=2):
     # Empty rays are outside the cavity. Conservative neighbourhood protects
     # interpolation at rounded edges and the mesh's 0.3 mm tessellation error.
     depth[~np.isfinite(depth)] = 0
-    padded = np.pad(depth, 1, mode="constant")
-    safe = np.minimum.reduce([padded[j:j + ny, i:i + nx] for j in range(3) for i in range(3)])
+    padded = np.pad(depth, margin_cells, mode="constant")
+    safe = np.minimum.reduce([padded[j:j + ny, i:i + nx]
+                             for j in range(2*margin_cells+1) for i in range(2*margin_cells+1)])
     return dict(origin=origin, step=step, nx=nx, ny=ny,
                 depth=np.round(np.maximum(0, safe - 0.5), 2).ravel().tolist())

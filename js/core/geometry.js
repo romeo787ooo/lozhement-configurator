@@ -34,6 +34,10 @@ function geom(it, pl, P) {
 const r1 = v => Math.round(v * 10) / 10;
 function depthInfo(it, c, P, zone) {
   const st = Math.max(1, P.step), up = v => Math.ceil(v / st - 1e-9) * st, down = v => Math.floor(v / st + 1e-9) * st;
+  if(zone!=='lid' && hasTiers()){
+    const t=tierFor(it,c),max=down(t.thickness-t.bottom),need=up(it.h);
+    return need<=max?{depth:need,protr:0,lidDepth:0}:{depth:Math.max(0,max),err:t.name+': высота '+it.h+' мм, доступно '+Math.max(0,max)+' мм над дном'};
+  }
   if (zone === "lid") {
     const maxP = down(c.lid - P.minBottom), need = up(it.h);
     if (need <= maxP) return { depth: need, protr: 0, lidDepth: 0 };

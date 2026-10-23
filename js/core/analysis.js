@@ -7,7 +7,7 @@ function analyze(c, P, items, place) {
   const F = foamOf(c, P), all = instances(items), res = [], ghosts = [];
   for (const x of all) {
     const zone = x.it.zone === "lid" ? "lid" : "body", d = depthInfo(x.it, c, P, zone), pl = place[x.key];
-    const r = { key: x.key, it: x.it, n: x.n, zone, d, pl, g: pl ? geom(x.it, pl, P) : null, errs: [] };
+    const r = { key: x.key, it: x.it, n: x.n, zone, tierId: zone==='body'?tierFor(x.it,c).id:null, d, pl, g: pl ? geom(x.it, pl, P) : null, errs: [] };
     if (!pl) r.errs.push("не поместился в ложемент");
     if (d.err) r.errs.push(d.err);
     if (r.g) {
@@ -19,7 +19,7 @@ function analyze(c, P, items, place) {
   }
   for (let i = 0; i < res.length; i++) for (let j = i + 1; j < res.length; j++) {
     const a = res[i], b = res[j];
-    if (!a.g || !b.g || a.zone !== b.zone) continue;
+    if (!a.g || !b.g || a.zone !== b.zone || a.tierId !== b.tierId) continue;
     if (overlap(a.g.fp, b.g.fp, P.bridge)) { a.errs.push("мало места до соседнего выреза"); b.errs.push("мало места до соседнего выреза"); }
   }
   for (const r of res) if (r.g && r.zone === "lid") for (const gh of ghosts) if (overlap(r.g.fp, gh.rect, P.bridge)) r.errs.push("пересекается с ответным вырезом в крышке");
@@ -31,5 +31,5 @@ function analyze(c, P, items, place) {
       : (r.zone === "lid" ? "в крышке" : "в корпусе") + ", глубина выреза " + r.d.depth + " мм";
   }
   const area = z => res.filter(r => r.g && r.zone === z).reduce((s, r) => s + (r.it.shape === "cyl" ? Math.PI * (r.g.pocket.w / 2) ** 2 : r.g.pocket.w * r.g.pocket.h), 0) / (F.L * F.W);
-  return { c, P, F, res, ghosts, fillBody: area("body"), fillLid: area("lid"), errors: res.filter(r => r.level === "err").length, warns: res.filter(r => r.level === "warn").length };
+  return { c, P, F, res, ghosts, tierErrors:tierErrors(c), fillBody: area("body")/tierList(c).length, fillLid: area("lid"), errors: res.filter(r => r.level === "err").length+tierErrors(c).length, warns: res.filter(r => r.level === "warn").length };
 }

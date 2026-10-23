@@ -345,9 +345,47 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 .zoom-controls .btn { min-width: 30px; padding: 4px 7px; }
 .zoom-label { min-width: 42px; text-align: center; font: 11px "IBM Plex Mono", monospace; color: var(--ink-2); }
 </style>
+<style>
+.tier-controls,.tier-tabs,.tier-scene-controls {display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;}
+.tree {border:0;border-radius:0;padding:0 2px;font-size:13px;isolation:isolate;}
+.tree ul ul {margin-left:9px;padding-left:17px;border-left:0;}
+.tree li {position:relative;}
+.tree ul ul>li::before {content:"";position:absolute;left:-17px;top:0;width:17px;height:18px;border-left:2px solid var(--line);border-bottom:2px solid var(--line);border-bottom-left-radius:7px;pointer-events:none;}
+.tree ul ul>li:not(:last-child)::after {content:"";position:absolute;left:-17px;top:18px;bottom:0;border-left:2px solid var(--line);pointer-events:none;}
+.tree .tn,.tree .tn[data-lv] {position:relative;display:flex;gap:5px;min-height:36px;padding:0 4px 0 0;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;}
+.tree .tn.sel {background:var(--accent-soft);}
+.tree .tn.sel::after {content:"";position:absolute;inset:0 100% 0 -200px;background:var(--accent-soft);z-index:-1;pointer-events:none;}
+.tree .tw {position:relative;z-index:1;width:18px;height:18px;border-radius:50%;background:#0866e8;color:white;}
+.tree .tw:hover {background:#0053c2;}
+.tree .tw::before,.tree li[aria-expanded=true]>.tn .tw::before {content:"";width:9px;height:2px;border:0;background:currentColor;transform:none;}
+.tree li[aria-expanded=false]>.tn .tw::after {content:"";position:absolute;width:2px;height:9px;background:currentColor;}
+.tree .tn .tree-symbol,.tree .tn[data-lv] .tree-symbol {display:grid;place-items:center;width:20px;height:22px;background:none;border-radius:0;flex:none;}
+.tree-symbol svg {width:20px;height:20px;fill:color-mix(in srgb,currentColor 18%,transparent);stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;}
+.tree-eye {display:grid;place-items:center;width:24px;height:24px;padding:0;flex:none;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:var(--ink-2);cursor:pointer;}
+.tree-eye:hover {border-color:var(--accent);color:var(--accent);}
+.tree-eye[aria-pressed=false] {opacity:.5;}
+.tree-eye[hidden] {display:none;}
+.tree .tn .tl,.tree .tn[data-lv] .tl {padding:7px 2px;flex:1;min-width:65px;font-size:13px;color:var(--ink);font-weight:400;}
+.tree .tn[data-lv="1"] .tl {font-weight:600;}
+.tree .tn .tm,.tree .tn[data-lv] .tm {max-width:26%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;line-height:1.3;color:var(--ink-3);flex:0 1 auto;}
+.tree .tn>.dot {width:6px;height:6px;flex:none;}
+.tree .tree-action {padding:2px 4px;min-height:24px;flex:none;}
+.tree .props {margin:4px 0 6px 24px;border-radius:3px;}
+.tree .tn.drop-before {box-shadow:inset 0 2px var(--accent);}
+.tree .tn.drop-after {box-shadow:inset 0 -2px var(--accent);}
+.tier-tabs {border-bottom:1px solid var(--line);flex:none;max-height:150px;overflow:auto;}
+.tier-tabs button[aria-pressed=true] {background:var(--accent);color:var(--panel);}
+.tier-controls p {width:100%;margin:0;}
+.tier-field {display:grid;gap:6px;margin:12px 0;}
+#tier-dialog {width:min(420px,90vw);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:20px;}
+#tier-dialog::backdrop {background:#0008;}
+#tier-dialog .btn {margin:8px 6px 0 0;}
+.tier-tabs[hidden],.tier-scene-controls[hidden] {display:none;}
+</style>
 </head>
 <body>
 <div class="app">
+  <style>.project-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}.project-bar a{text-decoration:none}.project-bar strong{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:auto}.project-bar #project-status{font-size:12px;color:var(--ink-2)}</style>
   <header class="top">
     <div>
       <h1>Подбор кейса и конструктор ложемента</h1>
@@ -549,7 +587,10 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/core/orientation.js"></script>
 <script src="js/core/arrange.js"></script>
 <script src="js/core/state.js"></script>
+<script src="js/core/projects.js"></script>
+<script src="js/ui/project-session.js"></script>
 <script src="js/core/geometry.js"></script>
+<script src="js/core/tiers.js"></script>
 <script src="js/core/packing.js"></script>
 <script src="js/core/analysis.js"></script>
 <script src="js/core/pricing.js"></script>
@@ -561,6 +602,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/view/plan-2d.js"></script>
 <script src="js/ui/summary.js"></script>
 <script src="js/export/drawing.js"></script>
+<script src="js/export/tiers.js"></script>
 <script src="js/export/order.js"></script>
 <script src="js/ui/suggest.js"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -576,6 +618,9 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/ui/sketch-editor.js"></script>
 <script src="js/data/case-mesh-7030.js"></script>
 <script src="js/data/case-mesh-4035.js"></script>
+<script src="js/data/case-mesh-5040.js"></script>
+<script src="js/data/case-mesh-7010.js"></script>
+<script src="js/ui/tiers.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

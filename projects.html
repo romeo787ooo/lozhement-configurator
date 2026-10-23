@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Мои проекты — Калибр</title><link rel="stylesheet" href="css/projects.css">
+</head>
+<body>
+<main class="cabinet">
+  <header><div><a href="index.html" class="brand">КАЛИБР · КОНСТРУКТОР</a><h1>Мои проекты</h1><p>Кейсы, наборы предметов и компоновки ложементов</p></div><button class="primary" id="new-project">＋ Новый проект</button></header>
+  <aside class="notice">Локальный кабинет · Проекты хранятся только в этом браузере, без регистрации и синхронизации. Для переноса на другой компьютер и резервного хранения скачайте копию проекта.</aside>
+  <div class="filters"><label>Поиск проектов<input id="search" type="search" placeholder="Название или модель кейса"></label><label>Сортировка<select id="sort"><option value="updated">Сначала изменённые</option><option value="name">По названию</option></select></label><button id="import-project">Загрузить копию</button><input hidden id="import-file" type="file" accept=".json,application/json"></div>
+  <p id="message" role="status" aria-live="polite"></p><div id="projects" class="cards"></div>
+  <dialog id="project-dialog"><form id="project-form"><h2 id="dialog-title">Новый проект</h2><label>Название<input id="project-title" required maxlength="100" autofocus></label><label id="case-label">Кейс<select id="project-case"></select></label><p id="dialog-error" role="alert"></p><div class="dialog-actions"><button type="button" id="cancel-dialog">Отмена</button><button class="primary" type="submit">Сохранить</button></div></form></dialog>
+</main>
+<script src="js/data/catalog.js"></script><script src="js/data/templates.js"></script><script src="js/core/projects.js"></script><script src="js/data/demo-project.js"></script><script src="js/ui/projects-page.js"></script>
+</body></html>

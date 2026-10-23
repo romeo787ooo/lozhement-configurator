@@ -15,7 +15,7 @@ function arrangeFor(c, P, items) {
   // быстрая отсечка: даже при самых компактных положениях предметы не помещаются по площади
   const F = foamOf(c, P), cap = (F.L - 2 * P.margin) * (F.W - 2 * P.margin) * 1.02, sum = { body: 0, lid: 0 };
   for (const it of items) sum[it.zone === "lid" ? "lid" : "body"] += Math.max(1, it.qty | 0) * Math.min(...orientsOf(it).map(o => (o.l + 2 * P.clear + P.bridge) * (o.w + 2 * P.clear + P.bridge)));
-  if (sum.body > cap || sum.lid > cap) return place;
+  if ((!hasTiers() && sum.body > cap) || sum.lid > cap) return place;
   for (let g = 0; g < 6 && cur.p > 0; g++) {
     let best = null;
     for (const it of autos) {

@@ -42,13 +42,14 @@ function renderView() {
   const svg = $("view"), c = A.c, P = A.P, F = A.F;
   const Lo = c.out.l, Wo = c.out.w, M = Math.max(24, Lo * 0.05), fs = Math.max(9, Lo / 46), gap = Math.max(16, Wo * 0.07);
   const wx = (c.out.l - c.l) / 2, wy = (c.out.w - c.w) / 2;
-  const H = 2 * Wo + gap + 2 * M + fs;
+  const levels=hasTiers()?(S.activeTier==='all'?['lid',...tierList().slice().reverse().map(t=>t.id)]:[S.activeTier||S.tiers.at(-1).id]):['lid','body'];
+  const H = levels.length*Wo+(levels.length-1)*gap+2*M+fs;
   baseViewBox2D = [0, 0, Lo + 2 * M, H];
   svg.setAttribute("viewBox", "0 0 " + (Lo + 2 * M).toFixed(1) + " " + H.toFixed(1));
   svg.textContent = "";
-  const zones = { lid: { top: M + fs * 0.6 }, body: { top: M + fs * 0.6 + Wo + gap } };
+  const zones=Object.fromEntries(levels.map((id,i)=>[id,{top:M+fs*.6+i*(Wo+gap)}]));
   VIEW = { svg, zones: {} };
-  for (const z of ["lid", "body"]) {
+  for (const z of levels) {
     const top = zones[z].top, ox = M + wx + P.fit, oy = top + wy + P.fit;
     const tx = x => ox + x, ty = y => oy + F.W - y;
     VIEW.zones[z] = { ox, oy, tx, ty };
@@ -57,10 +58,11 @@ function renderView() {
     el("path", { d: segPath(rrSegs({ x: 0, y: 0, w: F.L, h: F.W }, P.cornerR, null), tx, ty), fill: "var(--foam)", stroke: "var(--foam-edge)", "stroke-width": 1 }, svg);
     const lbl = el("text", { x: M, y: z === "lid" ? top - fs * 0.45 : top + Wo + fs * 1.15, "font-size": fs * 0.95, fill: "var(--ink-2)", "font-family": "Golos Text, sans-serif" }, svg);
     lbl.textContent = (z === "lid" ? "Крышка · ложемент " + c.lid + " мм" : "Корпус · ложемент " + c.body + " мм") + " · " + r1(F.L) + " × " + r1(F.W) + " мм";
+    if(hasTiers()&&z!=='lid'){const t=tierList().find(t=>t.id===z);lbl.textContent=t.name+' · '+t.thickness+' мм · от дна '+r1(t.offset)+' мм';}
   }
-  for (const fx of [0.22, 0.78]) el("rect", { x: M + Lo * fx - Lo * 0.05, y: zones.lid.top + Wo, width: Lo * 0.1, height: gap, rx: 3, fill: "var(--case-edge)" }, svg);
+  if(!hasTiers())for (const fx of [0.22, 0.78]) el("rect", { x: M + Lo * fx - Lo * 0.05, y: zones.lid.top + Wo, width: Lo * 0.1, height: gap, rx: 3, fill: "var(--case-edge)" }, svg);
   const zl = VIEW.zones.lid;
-  for (const g of A.ghosts) {
+  for (const g of zl?A.ghosts:[]) {
     const d = g.it.shape === "cyl" ? null : segPath(rrSegs(g.rect, P.toolR, null), zl.tx, zl.ty);
     const common = { fill: "var(--pocket-ghost)", stroke: "var(--dim)", "stroke-width": Math.max(1, fs * 0.12), "stroke-dasharray": fs * 0.5 + " " + fs * 0.35 };
     if (d) el("path", Object.assign({ d }, common), svg);
@@ -70,7 +72,8 @@ function renderView() {
   }
   for (const r of A.res) {
     if (!r.g) continue;
-    const z = VIEW.zones[r.zone], foamD = r.zone === "lid" ? c.lid : c.body;
+    const z = VIEW.zones[levelOf(r.it)], foamD = r.zone === "lid" ? c.lid : tierFor(r.it).thickness;
+    if(!z)continue;
     const grp = el("g", { class: "pk", "data-key": r.key, tabindex: "0", role: "button", "aria-label": r.it.name + ": " + r.text }, svg);
     const sel = S.selected === r.key, bad = r.level === "err";
     const attrs = { fill: "var(--pocket)", "fill-opacity": (0.55 + 0.45 * Math.min(1, r.d.depth / foamD)).toFixed(2),
@@ -89,6 +92,13 @@ function renderView() {
       }
     }
   }
+  if(hasTiers()&&S.tierNeighbours&&S.activeTier!=='all'&&S.activeTier!=='lid'){
+    const z=VIEW.zones[S.activeTier],index=S.tiers.findIndex(t=>t.id===S.activeTier);
+    for(const r of A.res.filter(r=>r.g&&r.zone==='body'&&Math.abs(S.tiers.findIndex(t=>t.id===r.tierId)-index)===1)){
+      const segs=pocketSegs(r.it,r.g,P),attrs={fill:'none',stroke:'var(--dim)','stroke-width':1,'stroke-dasharray':'5 5','pointer-events':'none',opacity:.5};
+      if(segs[0].t==='C')el('circle',{...attrs,cx:z.tx(segs[0].cx),cy:z.ty(segs[0].cy),r:segs[0].r},svg);else el('path',{...attrs,d:segPath(segs,z.tx,z.ty)},svg);
+    }
+  }
   applyZoom2D();
 }
 
@@ -101,7 +111,7 @@ function svgPoint(e) {
   return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 function selectItem(key, redraw = true) {
-  S.selected = key; $("btn-rot").disabled = !key || !S.place[key];
+  S.selected = key;if(key&&hasTiers()&&S.activeTier!=='all'){const it=S.items.find(it=>key.startsWith(it.id+'#'));if(it)S.activeTier=levelOf(it);renderTierControls();applyTierScene();} $("btn-rot").disabled = !key || !S.place[key];
   if (redraw && A) { renderView(); renderItemStatus(); if (V3.on) render3D(); }
   if (A) updateTools();
   if (key) openStep("s-items");
@@ -112,7 +122,7 @@ function onDown(e) {
   const key = g.dataset.key, pl = S.place[key]; if (!pl) return;
   selectItem(key);
   const p = svgPoint(e);
-  drag = { key, sx: p.x, sy: p.y, x0: pl.x, y0: pl.y, zone: A.res.find(r=>r.key===key).zone, moved: false };
+  drag = { key, sx: p.x, sy: p.y, x0: pl.x, y0: pl.y, zone: levelOf(A.res.find(r=>r.key===key).it), moved: false };
   $("view").setPointerCapture(e.pointerId);
   e.preventDefault();
 }
@@ -127,6 +137,7 @@ function onMove(e) {
   if(group){group.setAttribute('transform',`translate(${dx} ${-dy})`);group.style.opacity=drag.target?'0.8':'0.4';}
 }
 function transferPlanInstance(key,zone,place) {
+  if(hasTiers()){moveInstanceTier(key,zone);S.place[S.selected||key]=place;return;}
   const [id,nText]=key.split('#'),n=+nText;let item=S.items.find(i=>i.id===id);
   if(!item)return;
   if(zoneOf(item)!==zone && item.qty>1){

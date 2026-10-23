@@ -16,13 +16,14 @@ function init() {
   ["f-name", "f-contact", "f-org", "f-comment"].forEach(id => $(id).addEventListener("input", () => { S.form[id.slice(2)] = $(id).value; saveDraft(); }));
   $("order-form").addEventListener("submit", submitOrder);
   $("btn-svg").onclick = exportSvg;
-  $("btn-auto").onclick = () => relayout();
+  $("btn-auto").onclick = arrangeCurrentTier;
   $("btn-rot").onclick = rotateSelected;
   const v = $("view");
   v.addEventListener("pointerdown", onDown); v.addEventListener("pointermove", onMove);
   v.addEventListener("pointerup", onUp); v.addEventListener("pointercancel", onUp);
   v.addEventListener("focusin", e => { const g = e.target.closest && e.target.closest(".pk"); if (g && S.selected !== g.dataset.key) { selectItem(g.dataset.key); const n = v.querySelector('.pk[data-key="' + g.dataset.key + '"]'); if (n) n.focus(); } });
   document.addEventListener("keydown", e => {
+    if(document.querySelector('dialog[open]'))return;
     if (typeof sketchIsOpen === "function" && sketchIsOpen()) return;
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
     if (!S.selected || !S.place[S.selected]) return;
@@ -34,9 +35,11 @@ function init() {
   if (!Object.keys(S.place || {}).length) relayout(); else refresh();
   renderDone();
 }
+initTierUI();
 initView3();
 initLayout();
 initZoom2D();
 initTools();
 initSketchEditor();
 init();
+initProjectSession();

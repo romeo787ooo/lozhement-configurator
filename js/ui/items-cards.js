@@ -20,6 +20,7 @@ function renderCards() {
       '<div><span class="chip" id="st-' + it.id + '">…</span></div>';
     const q = s => d.querySelector(s);
     q(".name").value = it.name; q(".qty").value = it.qty; q(".shape").value = it.kind; q(".zone").value = it.zone;
+    if(hasTiers()){q('.zone').textContent='';for(const [id,name] of [['lid','Крышка'],...tierList().map(t=>[t.id,t.name])])q('.zone').add(new Option(name,id));q('.zone').value=levelOf(it);}
     q(".notch").checked = !!it.notch; q(".notch").disabled = it.shape === "cyl";
     q(".l").value = it.dim[0]; q(".w").value = it.dim[1]; q(".h").value = it.dim[2];
     q(".lab-l").textContent = it.kind === "cyl" ? "Диаметр" : "Длина";
@@ -35,7 +36,7 @@ function renderCards() {
     dimIn(".l", 0, 5, 2000); dimIn(".w", 1, 5, 2000); dimIn(".h", 2, 1, 2000);
     q(".qty").addEventListener("input", e => { const v = parseFloat(e.target.value); if (!isFinite(v)) return; it.qty = Math.max(1, Math.min(50, v)); debouncedRelayout(); });
     q(".shape").onchange = e => { it.kind = e.target.value; it.dim = [it.dim[0], it.kind === "cyl" ? it.dim[0] : it.dim[1], it.dim[2]]; it.orient = "auto"; it.pref = 2; applyOrient(it, 2); if (it.kind === "cyl") it.notch = false; renderItems(); relayout(); };
-    q(".zone").onchange = e => { it.zone = e.target.value; relayout(); };
+    q(".zone").onchange = e => { const id=e.target.value;it.zone=id==='lid'?'lid':'body';if(hasTiers()){it.tierId=id==='lid'?it.tierId:id;S.activeTier=id;reflowItem(it);}else relayout(); };
     q(".notch").onchange = e => { it.notch = e.target.checked; relayout(); };
     q(".del").onclick = () => { S.items = S.items.filter(x => x !== it); renderItems(); relayout(); };
     d.addEventListener("focusin", () => { if (!S.selected || !S.selected.startsWith(it.id + "#")) selectItem(it.id + "#0"); });

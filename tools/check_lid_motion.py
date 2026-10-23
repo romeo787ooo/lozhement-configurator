@@ -11,7 +11,7 @@ with sync_playwright() as p:
     page.wait_for_function("V3.bjs?.ready")
     result = page.evaluate("""() => {
       const results=[];
-      for(const id of ['4035','7030']) {
+      for(const id of ['4035','7030','5040','7010']) {
         S.caseId=id; V3.lid=100; relayout();
         const b=V3.bjs, meshes=b.scene.meshes.slice(), originalBuild=build3;
         let builds=0;
