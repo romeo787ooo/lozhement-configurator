@@ -73,7 +73,7 @@ function renderTree() {
     const tl = hEl("button", "tl", label); tl.type = "button"; tl.title = label; tl.onclick = o.onLabel || tw.onclick;
     const eye=hEl('button','tree-eye');eye.type='button';
     let visible=true,toggle=null;
-    if(o.item){visible=!V3.hide.items.has(id);toggle=()=>{visible?V3.hide.items.add(id):V3.hide.items.delete(id);render3D();};}
+    if(o.item){const it=S.items.find(i=>i.id===id);visible=!V3.hide.items.has(id)&&!(S.stepReveal&&stepChild(it));toggle=()=>toggleSteppedItemVisibility(it);}
     else if(o.tier){visible=!V3.hiddenTiers?.has(id);toggle=()=>{V3.hiddenTiers??=new Set();visible?V3.hiddenTiers.add(id):V3.hiddenTiers.delete(id);applyTierScene();renderRows3();};}
     else if(lv===1){visible=!V3.hide.shell;toggle=()=>{V3.hide.shell=!V3.hide.shell;render3D();};}
     else if(id==='lid'){visible=!V3.hide.lid;toggle=()=>{V3.hide.lid=!V3.hide.lid;render3D();};}
@@ -137,7 +137,7 @@ function renderTree() {
     const rs = res.filter(r => r.it === it), w = worst(rs), idx = S.items.indexOf(it);
     const bad = rs.some(r => !r.g || r.d.err), isSel = !!S.selected && S.selected.startsWith(it.id + "#");
     const n = node(parent, it.id, hasTiers()&&it.zone!=="lid"?4:3, it.name, {item:true,
-      color: bad ? RED3 : PAL3[idx % PAL3.length], qty: Math.max(1, it.qty | 0), meta: dimTxt(it), dot: dot(w), sel: isSel,
+      color: bad ? RED3 : PAL3[idx % PAL3.length], qty: Math.max(1, it.qty | 0), meta: it.stepParentId?'↓ под '+(stepParent(it)?.name||'удалённым'):dimTxt(it), dot: dot(w), sel: isSel,
       onLabel: () => { if (isSel) { setOpen(it.id, !isOpen(it.id)); renderTree(); } else selectItem(it.id + "#0"); }
     });
     if (!n.kids) return;

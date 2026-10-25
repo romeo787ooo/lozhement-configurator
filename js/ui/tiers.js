@@ -63,7 +63,8 @@ function tierMenu(id,x,y){
   add('Дублировать ярус',()=>{
     const t=S.tiers.find(t=>t.id===id),copy={...t,id:'tier-'+Date.now(),name:t.name+' (копия)'};
     const items=S.items.filter(it=>it.zone!=='lid'&&tierFor(it).id===id);
-    for(const it of items){const n=structuredClone(it);n.id='i'+uid++;n.tierId=copy.id;S.items.push(n);for(let j=0;j<it.qty;j++)if(S.place[it.id+'#'+j])S.place[n.id+'#'+j]={...S.place[it.id+'#'+j]};}
+    const ids=new Map(items.map(it=>[it.id,'i'+uid++]));
+    for(const it of items){const n=structuredClone(it);n.id=ids.get(it.id);n.tierId=copy.id;if(n.stepParentId)n.stepParentId=ids.get(n.stepParentId)||n.stepParentId;S.items.push(n);for(let j=0;j<it.qty;j++)if(S.place[it.id+'#'+j])S.place[n.id+'#'+j]={...S.place[it.id+'#'+j]};}
     S.tiers.splice(S.tiers.indexOf(t)+1,0,copy);S.activeTier=copy.id;tierChanged();
   });
   const i=S.tiers.findIndex(t=>t.id===id);

@@ -7,10 +7,10 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto('http://127.0.0.1:5500/projects.html')
-    assert page.locator('.card').count()==1
+    assert page.locator('.card').count()==2
     page.reload()
-    assert page.locator('.card').count()==1, 'demo duplicated on reload'
-    page.locator('.card .open').click()
+    assert page.locator('.card').count()==2, 'demo duplicated on reload'
+    page.locator('.card').filter(has_text='Выездная съёмка').locator('.open').click()
     page.wait_for_function('typeof A!=="undefined" && A && V3.bjs?.ready')
     print(page.evaluate("""() => ({errors:A.errors,details:A.res.filter(r=>r.errs.length).map(r=>({name:r.it?.name,errs:r.errs})),height:tierHeight(),items:S.items.length})"""))
     assert page.evaluate('A.errors')==0

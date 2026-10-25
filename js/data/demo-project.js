@@ -42,3 +42,25 @@ function ensureTierDemo(){
   if(localStorage.getItem(key))return;
   createTierDemo();localStorage.setItem(key,'1');
 }
+
+function steppedDemoState(){
+  const s=tierDemoState();delete s.tiers;delete s.activeTier;delete s.tierViewMode;delete s.tierViewGap;
+  s.items=[];s.place={};s.treeOpen=['case','body'];s.stepReveal=false;s.stepDemoVersion=2;
+  s.demoGuide='Демо ступенчатых карманов: один цельный ложемент, без съёмных ярусов. Все предметы показаны. Включите «Снять верхние предметы», чтобы рассмотреть нижние углубления и опорные уступы. На плане нижние карманы обозначены пунктиром. Для извлечения нижнего предмета сначала выньте верхний. Размеры демонстрационные.';
+  s.demoSummary='Четыре пары карманов в одном блоке: маленькие предметы под крупными. В 3D можно снять верхние предметы и увидеть ступени.';
+  function add(name,l,w,h,x,y,parent=null,shape='rect',zone='body'){
+    const id='i'+(s.items.length+1);s.items.push({id,name,l,w,h,shape,kind:shape,dim:[l,w,h],orient:'2',pref:2,up:2,qty:1,zone,notch:false,...(parent?{stepParentId:parent}:{})});s.place[id+'#0']={x,y,rot:0};return id;
+  }
+  const station=add('Полевая станция',280,160,65,30,40);
+  add('Питание станции',150,85,40,95,77.5,station);
+  const camera=add('Камера',160,160,95,350,40);
+  add('Карты памяти и адаптеры',80,60,25,390,90,camera);
+  const monitor=add('Монитор',320,120,45,30,250);
+  add('Комплект кабелей',160,60,30,110,280,monitor);
+  const lens=add('Объектив',120,120,70,390,250,null,'cyl');
+  add('Фильтры',60,60,25,420,280,lens,'cyl');
+  add('Планшет',250,175,10,35,40,null,'rect','lid');
+  return s;
+}
+function createSteppedDemo(){return Projects.create('Демо · Ступенчатые карманы',steppedDemoState());}
+function ensureSteppedDemo(){const key='lozhement-stepped-demo-v1';if(localStorage.getItem(key))return;createSteppedDemo();localStorage.setItem(key,'1');}

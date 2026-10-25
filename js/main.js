@@ -36,6 +36,7 @@ function init() {
   renderDone();
 }
 initTierUI();
+initSteppedUI();
 initView3();
 initLayout();
 initZoom2D();

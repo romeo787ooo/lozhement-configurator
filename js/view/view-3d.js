@@ -126,7 +126,7 @@ function build3(caseMesh) {
     }
     if(tier)tierStart=m.p.length/3;
     const pk = [];
-    for (const r of A.res) if (r.g && r.zone === zone && (!tier||r.tierId===tier.id) && r.d.depth > 0) pk.push({ r, poly: shiftP(polyOf(pocketSegs(r.it, r.g, P)), ox, oy), depth: r.d.depth });
+    for (const r of A.res) if (r.g && r.zone === zone && (!tier||r.tierId===tier.id) && r.d.depth > 0 && (!r.it.stepParentId||!r.errs.length)) pk.push({ r, poly: shiftP(polyOf(pocketSegs(r.it, r.g, P)), ox, oy), depth: r.d.depth, start:r.d.startDepth||0 });
     if (zone === "lid") for (const g of A.ghosts) if (g.depth > 0) pk.push({ poly: shiftP(polyOf(g.it.shape === "cyl" ? [{ t: "C", cx: g.rect.x + g.rect.w / 2, cy: g.rect.y + g.rect.h / 2, r: g.rect.w / 2 }] : rrSegs(g.rect, P.toolR, null)), ox, oy), depth: g.depth });
     const tb = Math.min(5, depth), wallSplit = (poly, za, zb) => {
       if (mat === "ppe-2c" && za < zb - tb) { m.col = base; wall3(m, poly, za, zb - tb); m.col = topC; wall3(m, poly, zb - tb, zb); }
@@ -134,11 +134,12 @@ function build3(caseMesh) {
     };
     fitFoam3(m, !V3.hide.shell && cm ? cm.d : null, zone, tier?hb:top, () => {
       m.col = base; fill3(m, outerF, [], z0); wallSplit(outerF, z0, top);
-      m.col = topC; fill3(m, outerF, pk.map(p => p.poly), top);
-      for (const p of pk) { wallSplit(p.poly, top - p.depth, top); m.col = base; fill3(m, p.poly, [], top - p.depth); }
+      m.col = topC; fill3(m, outerF, pk.filter(p=>!p.r?.it.stepParentId).map(p => p.poly), top);
+      for (const p of pk) { wallSplit(p.poly, top - p.depth, top-(p.start||0)); m.col = base; fill3(m, p.poly, pk.filter(child=>child.r?.it.stepParentId===p.r?.it.id&&p.r).map(child=>child.poly), top - p.depth); }
     });
     for (const p of pk) {
       if (!p.r || p.r.d.err || V3.hide.items.has(p.r.it.id)) continue;
+      if(S.stepReveal&&stepChild(p.r.it))continue;
       const it = p.r.it, g = p.r.g.pocket, zb = top - p.depth, k = P.clear, cx = ox + g.x + g.w / 2, cy = oy + g.y + g.h / 2;
       const col = p.r.level === "err" ? rgb3(RED3) : palOf(it);
       itemMesh(p.r, col, () => {
@@ -249,8 +250,9 @@ function renderRows3() {
       row(title,'var(--foam)',!V3.hiddenTiers.has(id),()=>{V3.hiddenTiers.has(id)?V3.hiddenTiers.delete(id):V3.hiddenTiers.add(id);applyTierScene();renderRows3();},()=>selectTier(id));
     }
     for (const it of S.items.filter(it=>!id||levelOf(it)===id)) {
-    row(it.name + (it.qty > 1 ? " × " + it.qty : "") + (bad.has(it.id) ? " (не вмещается)" : ""), bad.has(it.id) ? RED3 : PAL3[S.items.indexOf(it) % PAL3.length], !V3.hide.items.has(it.id),
-    tg(() => { V3.hide.items.has(it.id) ? V3.hide.items.delete(it.id) : V3.hide.items.add(it.id); }), () => selectItem(it.id + "#0"), !!S.selected && S.selected.startsWith(it.id + "#"));
+    const removed=!!(S.stepReveal&&stepChild(it));
+    row(it.name + (it.qty > 1 ? " × " + it.qty : "") + (removed?' (снят)':bad.has(it.id) ? " (не вмещается)" : ""), bad.has(it.id) ? RED3 : PAL3[S.items.indexOf(it) % PAL3.length], !V3.hide.items.has(it.id)&&!removed,
+    () => toggleSteppedItemVisibility(it), () => selectItem(it.id + "#0"), !!S.selected && S.selected.startsWith(it.id + "#"));
     if(hasTiers())box.lastElementChild.style.marginLeft='12px';
     }
   }

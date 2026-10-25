@@ -7,7 +7,7 @@ function layoutScore(c, P, items, place) {
   for (const x of instances(items)) { if (!place[x.key]) p++; if (depthInfo(x.it, c, P, x.it.zone === "lid" ? "lid" : "body").err) p++; const s = pocketSize(x.it, P); a += (s.pw + b) * (s.ph + b); }
   return { p, a };
 }
-function arrangeFor(c, P, items) {
+function arrangeRoots(c, P, items) {
   const autos = items.filter(i => i.orient === "auto" && orientsOf(i).length > 1);
   for (const it of items) applyOrient(it, it.orient === "auto" ? it.pref : +it.orient);
   let place = arrangeBase(c, P, items), cur = layoutScore(c, P, items, place);

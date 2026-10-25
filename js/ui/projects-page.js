@@ -16,10 +16,11 @@ function render(){
       const s=p.draft||p.saved,card=document.createElement('article');card.className='card';
       const tag=document.createElement('span');tag.className='case-tag';tag.textContent='▣ Калибр '+s.caseId;
       const title=document.createElement('h2');title.textContent=p.name;
-      const guide=document.createElement('p');if(s.demoGuide)guide.textContent='Три съёмных яруса: питание → оптика → оборудование. Откройте проект и сравните виды «В сборе» и «Разнести ярусы».';else guide.hidden=true;
+      const guide=document.createElement('p');if(s.demoGuide)guide.textContent=s.demoSummary||'Три съёмных яруса: питание → оптика → оборудование. Откройте проект и сравните виды «В сборе» и «Разнести ярусы».';else guide.hidden=true;
       const info=document.createElement('dl');
       const c=caseById(s.caseId);
       for(const [label,value] of [['Предметов',(s.items||[]).reduce((n,i)=>n+(i.qty||1),0)],['Ярусов основания',s.tiers?.length||1],['Внутренние размеры',c?`${c.l} × ${c.w} × ${c.h} мм`:'—']]){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;info.append(dt,dd);}
+      const stepped=(s.items||[]).filter(i=>i.stepParentId).length;if(stepped){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent='Ступенчатых пар';dd.textContent=stepped;info.append(dt,dd);}
       const stamp=document.createElement('p');stamp.textContent='Изменён '+date(p.updatedAt);
       const saved=document.createElement('p');saved.textContent=JSON.stringify(p.saved)===JSON.stringify(p.draft)?'Все изменения сохранены':'Есть автоматически сохранённый черновик';
       const actions=document.createElement('div');actions.className='actions';const link=document.createElement('a');link.className='open';link.href='index.html?project='+encodeURIComponent(p.id);link.textContent='Открыть';actions.append(link);
@@ -41,5 +42,6 @@ el('import-project').onclick=()=>el('import-file').click();
 el('import-file').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>15*1024*1024)throw Error('Файл слишком большой (максимум 15 МБ).');const data=JSON.parse(await file.text());const p=data.project,s=p?.draft||p?.saved;if(data.format!=='lozhement-project'||data.version!==1||!s||!Array.isArray(s.items)||!caseById(s.caseId)||!s.params||!s.place||typeof p.name!=='string')throw Error('Неверный формат копии проекта.');Projects.create(p.name,s);render();message('Копия загружена как отдельный проект.');}catch(err){message('Не удалось загрузить копию: '+err.message);}finally{e.target.value='';}};
 window.addEventListener('storage',render);
 const demoButton=document.createElement('button');demoButton.textContent='Создать демо · 3 яруса';demoButton.onclick=()=>{try{const p=createTierDemo();location.href='index.html?project='+encodeURIComponent(p.id);}catch(e){message('Не удалось создать демо: '+e.message);}};document.querySelector('.filters').append(demoButton);
-try{Projects.migrate();ensureTierDemo();}catch(e){message('Не удалось подготовить проекты: '+e.message);}
+const steppedDemoButton=document.createElement('button');steppedDemoButton.textContent='Демо · Ступенчатые карманы';steppedDemoButton.onclick=()=>{try{const p=createSteppedDemo();location.href='index.html?project='+encodeURIComponent(p.id);}catch(e){message('Не удалось создать демо: '+e.message);}};document.querySelector('.filters').append(steppedDemoButton);
+try{Projects.migrate();ensureTierDemo();ensureSteppedDemo();}catch(e){message('Не удалось подготовить проекты: '+e.message);}
 render();

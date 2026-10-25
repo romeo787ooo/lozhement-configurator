@@ -30,6 +30,7 @@ function updateTools() {
   nb.disabled = cyl; nb.setAttribute("aria-pressed", String(!!(s && s.it.notch && !cyl)));
   $("btn-rot").disabled = !has || cyl;
   const sk = $("btn-sketch"); if (sk) sk.disabled = !s;
+  renderSteppedControls();
 }
 function actDelete() {
   const s = selInfo(); if (!s) return;
@@ -44,6 +45,7 @@ function actOrient(val) { const s = selInfo(); if (!s) return; s.it.orient = val
 function actNotch() { const s = selInfo(); if (!s || s.it.shape === "cyl") return; s.it.notch = !s.it.notch; renderItems(); reflowItem(s.it); }
 // Перерасстановка только одного предмета: остальные остаются на местах
 function reflowItem(it) {
+  if(it.stepParentId||stepChild(it)){refresh();return;}
   const c = curCase(), P = S.params, b = P.bridge, F = foamOf(c, P), om = P.margin - b / 2, Wc = F.L - 2 * om, Hc = F.W - 2 * om;
   const mine = instances([it]), others = instances(S.items.filter(x => x !== it)), zn = z => z === "lid" ? "lid" : "body";
   const cell = x => { const g = geom(x.it, S.place[x.key], P).fp; return { x: g.x - P.margin, y: g.y - P.margin, w: g.w + b, h: g.h + b }; };
@@ -80,6 +82,7 @@ function showCtx(x, y, key) {
   m.appendChild(document.createElement("hr"));
   mi("Выемка под палец", actNotch, { checked: !!it.notch && !cyl, disabled: cyl });
   mi("Редактировать контур выреза…", () => openSketchEditor());
+  mi("Ступенчатый карман…", editSteppedPocket);
   m.appendChild(document.createElement("hr"));
   mi(it.qty > 1 ? "Удалить этот экземпляр" : "Удалить предмет", actDelete, { danger: true });
   m.hidden = false;

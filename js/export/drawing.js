@@ -33,6 +33,7 @@ function dxfFor(zone, A, nums) {
   rrSegs({ x: 0, y: 0, w: F.L, h: F.W }, P.cornerR, null).forEach(g => out.push(ent(g, "KONTUR")));
   for (const { no, r } of nums.list.filter(x => x.r.zone === zone)) {
     const ly = lay(r.d.depth);
+    if(r.it.stepParentId)out.push(['999','STEPPED POCKET '+no+'; start depth '+r.d.startDepth+' mm; bottom depth '+r.d.depth+' mm; upper pocket '+nums.list.find(x=>x.r.it.id===r.it.stepParentId)?.no]);
     pocketSegs(r.it, r.g, P).forEach(g => out.push(ent(g, ly)));
     out.push(text(no, r.g.pocket.x + r.g.pocket.w / 2, r.g.pocket.y + r.g.pocket.h / 2));
   }
@@ -60,7 +61,7 @@ function drawingSVG(A, nums, order) {
   const { F, P, c } = A, fs = Math.max(5, Math.min(14, F.L / 70)), pad = fs * 3, x0 = pad + fs * 4;
   const lidTop = pad + fs * 3, bodyTop = lidTop + F.W + fs * 8, tx0 = x0 + F.L + fs * 6, tw = fs * 46, rh = fs * 1.9;
   const rows = [];
-  for (const { no, r } of nums.list) rows.push([no, r.it.name, sizeTxt(r.it, P), r.d.depth, r1(r.g.pocket.x), r1(r.g.pocket.y), r.zone === "lid" ? "крышка" : "корпус"]);
+  for (const { no, r } of nums.list) rows.push([no, r.it.name+(r.it.stepParentId?' (нижняя ступень)':''), sizeTxt(r.it, P), r.it.stepParentId?r.d.startDepth+'–'+r.d.depth:r.d.depth, r1(r.g.pocket.x), r1(r.g.pocket.y), r.zone === "lid" ? "крышка" : "корпус"]);
   for (const g of A.ghosts) rows.push([nums.ghostNo[g.key], g.it.name + " (ответный)", sizeTxt(g.it, P), g.depth, r1(g.rect.x), r1(g.rect.y), "крышка"]);
   const tableH = rh * (rows.length + 1), noteY = lidTop + tableH + fs * 2, titleY = noteY + fs * 8, titleH = fs * 13;
   const W = tx0 + tw + pad, H = Math.max(bodyTop + F.W + fs * 6 + pad, titleY + titleH + pad);
@@ -76,9 +77,10 @@ function drawingSVG(A, nums, order) {
     const label = (no, cx, cy) => { o.push('<circle cx="' + r1(cx) + '" cy="' + r1(cy) + '" r="' + r1(fs * 0.95) + '" fill="#fff" stroke-width="0.35"/>'); T(cx, cy + fs * 0.35, no, fs * 0.95, ' text-anchor="middle"'); };
     for (const { no, r } of nums.list.filter(x => x.r.zone === zone)) {
       const segs = pocketSegs(r.it, r.g, P);
-      if (segs[0].t === "C") o.push('<circle cx="' + r1(tx(segs[0].cx)) + '" cy="' + r1(ty(segs[0].cy)) + '" r="' + r1(segs[0].r) + '" stroke-width="0.5"/>');
-      else o.push('<path d="' + segPath(segs, tx, ty) + '" stroke-width="0.5"/>');
-      label(no, tx(r.g.pocket.x + r.g.pocket.w / 2), ty(r.g.pocket.y + r.g.pocket.h / 2));
+      const style=' stroke-width="0.5"'+(r.it.stepParentId?' stroke-dasharray="3 2"':'');
+      if (segs[0].t === "C") o.push('<circle cx="' + r1(tx(segs[0].cx)) + '" cy="' + r1(ty(segs[0].cy)) + '" r="' + r1(segs[0].r) + '"'+style+'/>');
+      else o.push('<path d="' + segPath(segs, tx, ty) + '"'+style+'/>');
+      label(no, tx(r.g.pocket.x + r.g.pocket.w / 2), ty(stepChild(r.it)?r.g.pocket.y+r.g.pocket.h-fs*2:r.g.pocket.y + r.g.pocket.h / 2));
     }
     if (zone === "lid") for (const g of A.ghosts) {
       const dash = ' stroke-width="0.5" stroke-dasharray="' + r1(fs * 0.6) + " " + r1(fs * 0.4) + '"';

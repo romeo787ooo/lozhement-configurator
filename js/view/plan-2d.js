@@ -70,7 +70,7 @@ function renderView() {
     const t = el("text", { x: zl.tx(g.rect.x + g.rect.w / 2), y: zl.ty(g.rect.y + g.rect.h / 2) + fs * 0.3, "text-anchor": "middle", "font-size": fs * 0.7, fill: "var(--pocket-text)", "fill-opacity": 0.75, "font-family": "IBM Plex Mono, monospace" }, svg);
     t.textContent = "ответный " + g.depth;
   }
-  for (const r of A.res) {
+  for (const r of [...A.res].sort((a,b)=>Number(!!a.it.stepParentId)-Number(!!b.it.stepParentId))) {
     if (!r.g) continue;
     const z = VIEW.zones[levelOf(r.it)], foamD = r.zone === "lid" ? c.lid : tierFor(r.it).thickness;
     if(!z)continue;
@@ -79,16 +79,17 @@ function renderView() {
     const attrs = { fill: "var(--pocket)", "fill-opacity": (0.55 + 0.45 * Math.min(1, r.d.depth / foamD)).toFixed(2),
       stroke: bad ? "var(--err)" : sel ? "var(--accent)" : "var(--foam-edge)", "stroke-width": bad || sel ? Math.max(1.5, fs * 0.22) : 1 };
     const segs = pocketSegs(r.it, r.g, P);
+    if(r.it.stepParentId){attrs['stroke-dasharray']='6 4';attrs.stroke=bad?'var(--err)':'var(--accent)';attrs['fill-opacity']=0.85;}
     if (segs[0].t === "C") el("circle", Object.assign({ cx: z.tx(segs[0].cx), cy: z.ty(segs[0].cy), r: segs[0].r }, attrs), grp);
     else el("path", Object.assign({ d: segPath(segs, z.tx, z.ty) }, attrs), grp);
-    const p = r.g.pocket, cx = z.tx(p.x + p.w / 2), cy = z.ty(p.y + p.h / 2), maxCh = Math.floor(p.w / (fs * 0.5));
+    const p = r.g.pocket, cx = z.tx(p.x + p.w / 2), cy = z.ty(stepChild(r.it)?p.y+p.h-fs*1.5:p.y + p.h / 2), maxCh = Math.floor(p.w / (fs * 0.5));
     if (maxCh >= 3) {
       const name = r.it.name.length > maxCh ? r.it.name.slice(0, Math.max(1, maxCh - 1)) + "…" : r.it.name;
       const t1 = el("text", { x: cx, y: cy - (p.h > fs * 2.6 ? fs * 0.15 : -fs * 0.3), "text-anchor": "middle", "font-size": fs * 0.78, fill: "var(--pocket-text)", "font-family": "Golos Text, sans-serif", "pointer-events": "none" }, grp);
       t1.textContent = name;
       if (p.h > fs * 2.6) {
         const t2 = el("text", { x: cx, y: cy + fs * 0.85, "text-anchor": "middle", "font-size": fs * 0.66, fill: "var(--pocket-text)", "fill-opacity": 0.8, "font-family": "IBM Plex Mono, monospace", "pointer-events": "none" }, grp);
-        t2.textContent = "глуб. " + r.d.depth + (r.d.protr ? " +" + r.d.lidDepth : "");
+        t2.textContent = (r.it.stepParentId?'↓ '+r.d.startDepth+'–':'глуб. ') + r.d.depth + (r.d.protr ? " +" + r.d.lidDepth : "");
       }
     }
   }
@@ -121,6 +122,7 @@ function onDown(e) {
   const g = e.target.closest && e.target.closest(".pk"); if (!g) { selectItem(null); return; }
   const key = g.dataset.key, pl = S.place[key]; if (!pl) return;
   selectItem(key);
+  if(A.res.find(r=>r.key===key)?.it.stepParentId){e.preventDefault();return;}
   const p = svgPoint(e);
   drag = { key, sx: p.x, sy: p.y, x0: pl.x, y0: pl.y, zone: levelOf(A.res.find(r=>r.key===key).it), moved: false };
   $("view").setPointerCapture(e.pointerId);
@@ -156,6 +158,7 @@ function onUp(e) {
 function rotateSelected() {
   const key = S.selected, pl = key && S.place[key]; if (!pl) return;
   const r = A.res.find(x => x.key === key); if (!r || r.it.shape === "cyl") return;
+  if(r.it.stepParentId){r.it.stepRotate=!r.it.stepRotate;refresh();return;}
   const a = fpDims(r.it, S.params, pl.rot ? 1 : 0), b = fpDims(r.it, S.params, pl.rot ? 0 : 1);
   S.place[key] = { x: Math.round(pl.x + a.w / 2 - b.w / 2), y: Math.round(pl.y + a.h / 2 - b.h / 2), rot: pl.rot ? 0 : 90 };
   refresh();

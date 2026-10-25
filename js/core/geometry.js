@@ -32,7 +32,7 @@ function geom(it, pl, P) {
   return { rot: true, fp: { x: pl.x, y: pl.y, w: ph + e, h: pw }, pocket: { x: pl.x + e, y: pl.y, w: ph, h: pw }, notch: e ? { cx: pl.x + e, cy: pl.y + pw / 2, r: e, edge: "left" } : null };
 }
 const r1 = v => Math.round(v * 10) / 10;
-function depthInfo(it, c, P, zone) {
+function regularDepthInfo(it, c, P, zone) {
   const st = Math.max(1, P.step), up = v => Math.ceil(v / st - 1e-9) * st, down = v => Math.floor(v / st + 1e-9) * st;
   if(zone!=='lid' && hasTiers()){
     const t=tierFor(it,c),max=down(t.thickness-t.bottom),need=up(it.h);

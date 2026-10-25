@@ -18,6 +18,7 @@ function orderText(A, nums, order, q) {
   if(hasTiers())for(const [i,t] of tierList().entries())L.push('Ярус '+(i+1)+' снизу: '+t.name+'; толщина '+t.thickness+' мм; дно ≥ '+t.bottom+' мм; отметка '+r1(t.offset)+' мм; зазор сверху '+t.gap+' мм. Файл yarus-'+(i+1)+'.dxf');
   for (const { no, r } of nums.list) L.push("  " + no + ". " + r.it.name + " — предмет " + (r.it.shape === "cyl" ? "Ø" + r.it.l : r.it.l + "×" + r.it.w) + "×" + r.it.h + " мм, вырез " + sizeTxt(r.it, P) + ", глубина " + r.d.depth + " мм, " + (r.zone === "lid" ? "крышка" : "корпус") + (notchR(r.it, P) ? ", выемка под палец" : ""));
   for (const g of A.ghosts) L.push("  " + nums.ghostNo[g.key] + " ответный вырез в крышке под «" + g.it.name + "», глубина " + g.depth + " мм");
+  for(const {no,r} of nums.list.filter(x=>x.r.it.stepParentId))L.push('Ступень '+no+': под «'+(stepParent(r.it)?.name||'—')+'», начало '+r.d.startDepth+' мм, дно '+r.d.depth+' мм от поверхности ложемента. Нижний карман проходит через верхний; опорный уступ ≥ '+Math.max(5,P.bridge)+' мм. Для доступа вынуть верхний предмет.');
   if(hasTiers())for(const {no,r} of nums.list)L.push('Размещение выреза '+no+': '+levelName(r.it));
   L.push("", "Оценка (условные тарифы): комплект " + fmt(q.unit) + " ₽, подготовка " + fmt(q.setup) + " ₽, итого " + fmt(q.total) + " ₽");
   L.push("", "Контакты: " + S.form.name + "; " + S.form.contact + (S.form.org ? "; " + S.form.org : ""));
@@ -29,7 +30,7 @@ function orderJSON(A, nums, order, q) {
   const { F, P, c } = A;
   return JSON.stringify({
     order: order.no, date: order.date, case: { model: c.id, inner: [c.l, c.w, c.h], lid: c.lid, body: c.body }, needCase: S.needCase,
-    tiers:hasTiers()?tierList():undefined, material: MATERIALS[S.material].name, qty: q.qty, foam: { length: r1(F.L), width: r1(F.W) }, params: S.params,
+    tiers:hasTiers()?tierList():undefined, steppedPockets:nums.list.filter(x=>x.r.it.stepParentId).map(({no,r})=>({pocketNo:no,upperPocketNo:nums.list.find(x=>x.r.it.id===r.it.stepParentId)?.no,startDepth:r.d.startDepth,bottomDepth:r.d.depth,supportLedge:Math.max(5,P.bridge)})), material: MATERIALS[S.material].name, qty: q.qty, foam: { length: r1(F.L), width: r1(F.W) }, params: S.params,
     pockets: nums.list.map(({ no, r }) => ({ no, item: r.it.name, shape: r.it.shape, item_mm: [r.it.l, r.it.w, r.it.h], zone: r.zone, tierId:r.tierId, tierName:r.zone==='body'?levelName(r.it):null, x: r1(r.g.pocket.x), y: r1(r.g.pocket.y), w: r1(r.g.pocket.w), h: r1(r.g.pocket.h), depth: r.d.depth, notch: !!notchR(r.it, P), rotated: !!r.pl.rot }))
       .concat(A.ghosts.map(g => ({ no: nums.ghostNo[g.key], item: g.it.name, zone: "lid", counter: true, x: r1(g.rect.x), y: r1(g.rect.y), w: r1(g.rect.w), h: r1(g.rect.h), depth: g.depth }))),
     estimate: { unit: Math.round(q.unit), setup: q.setup, total: Math.round(q.total) },
@@ -69,7 +70,7 @@ function exportSvg() {
   saveFile("chertezh-lozhement-" + latin(A.c.id) + ".svg", drawingSVG(A, nums, order), "order-msg");
 }
 async function exportZip() {
-  if(hasTiers()&&A.errors){say('zip-msg','err','Исправьте ошибки размещения и высоты ярусов перед выгрузкой производственных файлов.');return;}
+  if((hasTiers()||S.items.some(it=>it.stepParentId))&&A.errors){say('zip-msg','err','Исправьте ошибки размещения и глубины карманов перед выгрузкой производственных файлов.');return;}
   if (!window.JSZip) { say("zip-msg", "err", "Не загрузилась библиотека архивов. Скачайте чертёж отдельно кнопкой «Скачать чертёж»."); return; }
   const nums = numbering(A), order = orderInfo(), q = quote(A), zip = new window.JSZip();
   if(hasTiers())for(const [i,t] of tierList().entries()){
