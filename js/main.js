@@ -44,3 +44,4 @@ initTools();
 initSketchEditor();
 init();
 initProjectSession();
+loadCaseMeshes();

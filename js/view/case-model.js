@@ -31,6 +31,27 @@ function getCaseMesh(id) {
   return d._m;
 }
 
+// Точные модели весят мегабайты, поэтому грузятся после запуска интерфейса, по одной.
+// case-mesh-7030.js объявляет CASE_MESH и идёт первым, затем модель текущего кейса, затем остальные.
+// Всё, что читает CASE_MESH, работает и без модели: до загрузки 3D показывает упрощённый корпус.
+const CASE_MESH_FILES = ["js/data/case-mesh-7030.js", "js/data/case-mesh-4035.js", "js/data/case-mesh-5040.js", "js/data/case-mesh-7010.js"];
+function loadCaseMeshes() {
+  const first = CASE_MESH_FILES[0], cur = CASE_MESH_FILES.find(f => f.endsWith("-" + S.caseId + ".js"));
+  const order = [first, ...(cur && cur !== first ? [cur] : []), ...CASE_MESH_FILES.filter(f => f !== first && f !== cur)];
+  const next = i => {
+    if (i >= order.length) return;
+    const s = document.createElement("script"); s.src = order[i];
+    s.onload = () => {
+      renderCaseList();
+      if (V3.on && order[i].endsWith("-" + S.caseId + ".js")) render3D();
+      next(i + 1);
+    };
+    s.onerror = () => next(i + 1);
+    document.body.appendChild(s);
+  };
+  next(0);
+}
+
 // ---------- Цвет кейса (пример набора; позже список подгрузится из каталога) ----------
 const CASE_COLORS = [["Чёрный", "#2f3438"], ["Серый", "#7d868e"], ["Оливковый", "#5f6b3c"], ["Жёлтый", "#e2b714"], ["Оранжевый", "#e8590c"], ["Синий", "#2f5fd0"]];
 function caseColor() { return (S.caseColor && /^#[0-9a-f]{6}$/i.test(S.caseColor)) ? S.caseColor : CASE_COLORS[1][1]; }

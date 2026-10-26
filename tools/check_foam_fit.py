@@ -21,6 +21,8 @@ def check(case_id='4035'):
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto("http://127.0.0.1:5500", wait_until="networkidle")
         page.wait_for_function("V3.bjs?.ready")
+        # Модели кейсов подгружаются после запуска интерфейса (loadCaseMeshes).
+        page.wait_for_function("id => typeof CASE_MESH !== 'undefined' && !!CASE_MESH[id]", arg=case_id, timeout=120000)
         result = page.evaluate("""id => {
           S.caseId=id; S.items=[]; S.place={}; V3.lid=0; relayout();
           const start=performance.now(), m=build3({d:CASE_MESH[id]});

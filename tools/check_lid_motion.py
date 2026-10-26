@@ -9,6 +9,8 @@ with sync_playwright() as p:
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto("http://127.0.0.1:5500", wait_until="networkidle")
     page.wait_for_function("V3.bjs?.ready")
+    # Модели кейсов подгружаются после запуска интерфейса (loadCaseMeshes).
+    page.wait_for_function("['4035','7030','5040','7010'].every(id => typeof CASE_MESH !== 'undefined' && CASE_MESH[id])", timeout=120000)
     result = page.evaluate("""() => {
       const results=[];
       for(const id of ['4035','7030','5040','7010']) {
