@@ -26,6 +26,7 @@ function renderCards() {
     q(".lab-l").textContent = it.kind === "cyl" ? "Диаметр" : "Длина";
     q(".lab-h").textContent = it.kind === "cyl" ? "Длина" : "Высота";
     q(".wbox").hidden = it.kind === "cyl"; fillOrient(it, q(".ori"));
+    if(it.model){for(const cls of ['.shape','.l','.w','.h','.notch']){q(cls).disabled=true;q(cls).title='Габариты заданы импортированной моделью; для другого масштаба импортируйте файл повторно.';}}
     q(".ori").onchange = e => { it.orient = e.target.value; relayout(); };
     q(".name").oninput = e => { it.name = e.target.value; refresh(); };
     const dimIn = (cls, idx, min, max) => q(cls).addEventListener("input", e => {

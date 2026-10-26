@@ -13,6 +13,7 @@ function orderText(A, nums, order, q) {
   L.push("Заказ ложемента " + order.no + " от " + order.date, "");
   L.push("Кейс: " + caseName(c) + " (внутри " + c.l + "×" + c.w + "×" + c.h + " мм)" + (S.needCase ? ", кейс тоже нужен" : ", кейс у заказчика есть"));
   L.push("Материал: " + MATERIALS[S.material].name, "Количество комплектов: " + q.qty);
+  for(const it of S.items.filter(i=>i.model))L.push('Импортированное изделие: '+it.name+'; источник '+it.model.source+'. Карман построен по внешней выпуклой проекции, глубина постоянная; проверить технологичность перед изготовлением.');
   L.push((hasTiers()?"Габарит пакета ярусов: ":"Ложемент корпуса: ") + r1(F.L) + "×" + r1(F.W) + "×" + (hasTiers()?tierHeight():c.body) + " мм; крышки: " + r1(F.L) + "×" + r1(F.W) + "×" + c.lid + " мм", "");
   L.push("Вырезы:");
   if(hasTiers())for(const [i,t] of tierList().entries())L.push('Ярус '+(i+1)+' снизу: '+t.name+'; толщина '+t.thickness+' мм; дно ≥ '+t.bottom+' мм; отметка '+r1(t.offset)+' мм; зазор сверху '+t.gap+' мм. Файл yarus-'+(i+1)+'.dxf');

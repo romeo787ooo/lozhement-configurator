@@ -30,28 +30,15 @@ async function ensureScaleScene3() {
   lines.color=new BABYLON.Color3(.48,.52,.56);
   SCALE3.caseMaterial=scaleMaterial3(scene,"case-material",caseColor());
   SCALE3.humanTask=(async()=>{
-    const response=await fetch("assets/human/human.json");
-    if(!response.ok)throw Error("Не удалось загрузить модель человека");
-    const data=await response.json(), positions=[];
-    let minY=Infinity,maxY=-Infinity,minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-    for(let i=0;i<data.positions.length;i+=3){
-      const p=data.positions;
-      minX=Math.min(minX,p[i]);maxX=Math.max(maxX,p[i]);
-      minY=Math.min(minY,p[i+1]);maxY=Math.max(maxY,p[i+1]);
-      minZ=Math.min(minZ,p[i+2]);maxZ=Math.max(maxZ,p[i+2]);
-    }
-    const unit=1/(maxY-minY);
-    for(let i=0;i<data.positions.length;i+=3){
-      const p=data.positions;
-      positions.push((p[i]-(minX+maxX)/2)*unit,-(p[i+2]-(minZ+maxZ)/2)*unit,(p[i+1]-minY)*unit);
-    }
-    const mesh=SCALE3.human=new BABYLON.Mesh("human",scene), vd=new BABYLON.VertexData();
-    vd.positions=positions;vd.indices=data.indices;vd.uvs=data.uvs;vd.normals=[];
-    BABYLON.VertexData.ComputeNormals(positions,data.indices,vd.normals,{useRightHandedSystem:true});vd.applyToMesh(mesh);
-    mesh.material=scaleMaterial3(scene,"human-material","#ffffff");
-    mesh.material.diffuseTexture=new BABYLON.Texture("assets/human/texture.jpg",scene);
-    mesh.scaling.setAll(SCALE3.height);mesh.rotation.z=Math.PI;
-    SCALE3.humanWidth=(maxX-minX)*unit;
+    const model=await BABYLON.SceneLoader.ImportMeshAsync(null,"assets/human/interaction/","human.glb",scene);
+    SCALE3.human=model.meshes[0];
+    SCALE3.human.rotationQuaternion=BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X,Math.PI/2);
+    for(const clip of model.animationGroups)clip.stop();
+    const pose=model.animationGroups.find(clip=>clip.name==="carry_compare");
+    if(!pose)throw Error("Missing comparison pose");
+    pose.start(false);pose.pause();pose.goToFrame(pose.from);
+    for(const mesh of model.meshes){mesh.isPickable=false;if(mesh.material){mesh.material.backFaceCulling=false;mesh.material.environmentIntensity=.6;}}
+    SCALE3.humanWidth=.32;
     updateScaleCase3();fitScaleCamera3();
   })();
   await SCALE3.humanTask;
@@ -59,7 +46,7 @@ async function ensureScaleScene3() {
 function updateScaleCase3() {
   if(!SCALE3.scene||!A)return;
   const d=typeof CASE_MESH!=="undefined"&&CASE_MESH[S.caseId], c=A.c;
-  SCALE3.human?.scaling.setAll(SCALE3.height);
+  SCALE3.human?.scaling.setAll(SCALE3.height/1.8);
   const offset=(SCALE3.humanWidth||.3)*SCALE3.height/2+200;
   SCALE3.caseMaterial.diffuseColor=BABYLON.Color3.FromHexString(caseColor());
   for(const mesh of SCALE3.caseMeshes||[])mesh.dispose();
@@ -119,44 +106,10 @@ function fitScaleCamera3() {
   const direction=BABYLON.Vector3.FromArray(views[SCALE3.view]).normalize();
   camera.setTarget(target);camera.setPosition(target.add(direction.scale(distance)));
 }
-async function toggleScaleScene3() {
-  if(!V3.bjs?.ready){$("v3n").textContent="Дождитесь запуска 3D-визуализатора.";return;}
-  SCALE3.active=!SCALE3.active;
-  const active=SCALE3.active;
-  $("v3-human").setAttribute("aria-pressed",String(active));
-  $("v3-human").textContent=active?"Вернуться к ложементу":"Сравнить с человеком";
-  $("v3-human-controls").hidden=!active;
-  for(const el of document.querySelector(".t3").children)
-    if(el.id!=="v3-human"&&el.id!=="v3-human-controls")el.hidden=active;
-  $("v3objects").hidden=active;$("v3l").hidden=active;$("v3lab").hidden=active;
-  if(active){
-    V3.bjs.camera.detachControl();$("v3n").textContent="Загрузка модели человека…";
-    try{
-      await ensureScaleScene3();
-      if(!SCALE3.active)return;
-      updateScaleCase3();fitScaleCamera3();
-      SCALE3.camera.attachControl($("gl3d"),false);
-    }catch(e){
-      if(SCALE3.active)await toggleScaleScene3();
-      SCALE3.scene?.dispose();SCALE3.scene=null;SCALE3.human=null;
-      $("v3n").textContent=e.message;
-    }
-  }else{
-    SCALE3.camera?.detachControl();V3.bjs.camera.attachControl($("gl3d"),false);
-    renderBabylon3D();
-  }
-}
-document.getElementById("v3-human").addEventListener("click",toggleScaleScene3);
 document.getElementById("v3-human-height").addEventListener("change",e=>{
   SCALE3.height=Math.max(100,Math.min(230,Number(e.target.value)||180))*10;
   e.target.value=SCALE3.height/10;updateScaleCase3();fitScaleCamera3();
 });
-document.querySelectorAll("[data-scale-view]").forEach(el=>el.addEventListener("click",()=>{
-  SCALE3.view=el.dataset.scaleView;fitScaleCamera3();
-}));
-document.getElementById("v3-scale-in").onclick=()=>{if(SCALE3.camera)SCALE3.camera.radius=Math.max(500,SCALE3.camera.radius/1.2);};
-document.getElementById("v3-scale-out").onclick=()=>{if(SCALE3.camera)SCALE3.camera.radius=Math.min(14000,SCALE3.camera.radius*1.2);};
-document.getElementById("v3-scale-fit").onclick=fitScaleCamera3;
 document.getElementById("v3-scale-lid").oninput=e=>moveScaleLid3(e.target.value);
 document.getElementById("v3-scale-open").onclick=()=>moveScaleLid3(100);
 document.getElementById("v3-scale-close").onclick=()=>moveScaleLid3(0);

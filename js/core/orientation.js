@@ -8,7 +8,13 @@ function orientDims(it, up) {
   const r = [0, 1, 2].filter(i => i !== up);
   return { shape: "rect", l: d[r[0]], w: d[r[1]], h: d[up] };
 }
-function applyOrient(it, up) { it.up = up; Object.assign(it, orientDims(it, up)); }
+function applyOrient(it, up) {
+  it.up = up; Object.assign(it, orientDims(it, up));
+  if(it.model && it.modelContourUp!==up){
+    it.customShape=it.model.projections[up].map(p=>({...p}));it.modelContourUp=up;
+    delete it.customPocketScale;it.notch=false;
+  }
+}
 function orientsOf(it) {
   const d = it.dim;
   if (it.kind === "cyl") {

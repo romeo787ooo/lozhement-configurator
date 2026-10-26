@@ -382,6 +382,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 #tier-dialog .btn {margin:8px 6px 0 0;}
 .tier-tabs[hidden],.tier-scene-controls[hidden] {display:none;}
 </style>
+<link rel="stylesheet" href="css/compact-tree.css">
 </head>
 <body>
 <div class="app">
@@ -546,19 +547,27 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
             <div class="ph"><b>3D-модель</b><span class="step-s" id="v3tag"></span><span class="sp"></span><button class="btn sm ghost" type="button" id="fs3" aria-pressed="false" title="Во весь экран">⛶ Во весь экран</button></div>
             <div class="c3wrap"><canvas id="gl3d" role="img" aria-label="3D-модель ложемента: крышка и корпус кейса"></canvas><div class="lab" id="v3lab"></div><details class="scene-objects" id="v3objects" open><summary title="Свернуть или раскрыть список объектов сцены">Объекты сцены</summary><div class="v3rows" id="v3l"></div></details></div>
             <div class="t3">
-              <button class="btn sm" id="v3-human" type="button" aria-pressed="false">Сравнить с человеком</button>
+              <button class="btn sm" id="v3-interaction" type="button" aria-pressed="false">Человек и кейс</button>
+              <span id="v3-interaction-controls" hidden>
+                <select id="interaction-mode" aria-label="Режим сцены с человеком">
+                  <option value="compare">Сравнить размеры: текущий кейс</option>
+                  <optgroup label="Переноска Калибр 5040">
+                  <option value="one">В одной руке</option><option value="two">Переноска вдвоём</option>
+                  <option value="roll">Катить: выдвижная ручка</option><option value="side">Катить: боковая ручка</option>
+                  </optgroup>
+                </select>
+                <button class="btn sm" data-interaction-view="iso" type="button">Изометрия</button>
+                <button class="btn sm" data-interaction-view="front" type="button">Спереди</button>
+                <button class="btn sm" data-interaction-view="side" type="button">Сбоку</button>
+                <button class="btn sm" id="interaction-in" type="button" title="Приблизить" aria-label="Приблизить сцену взаимодействия">+</button>
+                <button class="btn sm" id="interaction-out" type="button" title="Отдалить" aria-label="Отдалить сцену взаимодействия">−</button>
+                <button class="btn sm" id="interaction-fit" type="button">Вписать</button>
+              </span>
               <span id="v3-human-controls" hidden>
                 <label>Крышка <input id="v3-scale-lid" type="range" min="0" max="135" value="0" aria-label="Угол крышки в сцене с человеком"> <span id="v3-scale-lid-value" class="mono">0°</span></label>
                 <button class="btn sm" type="button" id="v3-scale-open">Открыть</button>
                 <button class="btn sm" type="button" id="v3-scale-close">Закрыть</button>
                 <label>Рост, см <input id="v3-human-height" type="number" min="100" max="230" value="180" step="1" style="width:65px"></label>
-                <button class="btn sm" type="button" data-scale-view="iso">Изометрия</button>
-                <button class="btn sm" type="button" data-scale-view="front">Спереди</button>
-                <button class="btn sm" type="button" data-scale-view="side">Сбоку</button>
-                <button class="btn sm" type="button" data-scale-view="top">Сверху</button>
-                <button class="btn sm" type="button" id="v3-scale-in" aria-label="Приблизить сцену сравнения">+</button>
-                <button class="btn sm" type="button" id="v3-scale-out" aria-label="Отдалить сцену сравнения">−</button>
-                <button class="btn sm" type="button" id="v3-scale-fit">Вписать</button>
               </span>
               <span class="seg" id="v3p"><button type="button" data-p="iso">Изометрия</button><button type="button" data-p="top">Сверху</button><button type="button" data-p="front">Спереди</button><button type="button" data-p="bottom">Снизу</button></span>
               <label class="chk"><input type="checkbox" id="v3t" checked> Подписи</label>
@@ -584,6 +593,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 
 <script src="js/data/catalog.js"></script>
 <script src="js/data/templates.js"></script>
+<script src="js/core/item-models.js"></script>
 <script src="js/core/orientation.js"></script>
 <script src="js/core/arrange.js"></script>
 <script src="js/core/state.js"></script>
@@ -599,6 +609,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/ui/step-case.js"></script>
 <script src="js/ui/items-cards.js"></script>
 <script src="js/ui/items-tree.js"></script>
+<script src="js/ui/compact-tree.js"></script>
 <script src="js/ui/step-params.js"></script>
 <script src="js/view/plan-2d.js"></script>
 <script src="js/ui/summary.js"></script>
@@ -607,9 +618,11 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/export/order.js"></script>
 <script src="js/ui/suggest.js"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <script src="js/view/foam-fit.js"></script>
 <script src="js/view/view-3d.js"></script>
 <script src="js/view/scale-scene.js"></script>
+<script src="js/view/interaction-scene.js"></script>
 <script src="js/ui/item-tooltip.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/view/case-model.js"></script>
@@ -619,6 +632,7 @@ li[aria-expanded="true"] > .tn .tw::before { transform: translateY(-1px) rotate(
 <script src="js/ui/sketch-editor.js"></script>
 <script src="js/ui/tiers.js"></script>
 <script src="js/ui/stepped.js"></script>
+<script src="js/ui/import-model.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

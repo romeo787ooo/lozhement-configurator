@@ -143,7 +143,8 @@ function build3(caseMesh) {
       const it = p.r.it, g = p.r.g.pocket, zb = top - p.depth, k = P.clear, cx = ox + g.x + g.w / 2, cy = oy + g.y + g.h / 2;
       const col = p.r.level === "err" ? rgb3(RED3) : palOf(it);
       itemMesh(p.r, col, () => {
-        if (Array.isArray(it.customShape) && it.customShape.length>=3) {
+        if(it.model){ItemModels.draw(m,it,cx-(p.r.g.rot?it.w:it.l)/2,cy-(p.r.g.rot?it.l:it.w)/2,zb,p.r.g.rot);}
+        else if (Array.isArray(it.customShape) && it.customShape.length>=3) {
           const q=p.poly.map(v=>[cx+(v[0]-cx)*(g.w-2*k)/g.w,cy+(v[1]-cy)*(g.h-2*k)/g.h]);
           wall3(m,q,zb,zb+it.h); fill3(m,q,[],zb); fill3(m,q,[],zb+it.h);
         } else if(it.shape==="cyl") cyl3(m,cx,cy,it.l/2,zb,zb+it.h);
@@ -164,7 +165,7 @@ function build3(caseMesh) {
   for (const r of A.res) {
     if ((r.g && !r.d.err) || V3.hide.items.has(r.it.id)) continue;
     const it = r.it, d1 = it.shape === "cyl" ? it.l : it.w;
-    itemMesh(r, rgb3(RED3), () => it.shape === "cyl" ? cyl3(m, xo + it.l / 2, yc + it.l / 2, it.l / 2, 0, it.h) : box3(m, xo, yc, xo + it.l, yc + d1, 0, it.h), [xo + it.l / 2, yc + d1 / 2, it.h]);
+    itemMesh(r, rgb3(RED3), () => it.model?ItemModels.draw(m,it,xo,yc,0,false):it.shape === "cyl" ? cyl3(m, xo + it.l / 2, yc + it.l / 2, it.l / 2, 0, it.h) : box3(m, xo, yc, xo + it.l, yc + d1, 0, it.h), [xo + it.l / 2, yc + d1 / 2, it.h]);
     m.lab[m.lab.length - 1].text = "✕ " + m.lab[m.lab.length - 1].text; out.push(it.name);
     yc += d1 + 25;
   }
@@ -295,7 +296,8 @@ async function initBabylon3D() {
       }
     });
     engine.runRenderLoop(()=>{if(V3.on){
-      if(typeof SCALE3!=="undefined" && SCALE3.active && SCALE3.scene) SCALE3.scene.render();
+      if(typeof INTERACT3!=="undefined" && INTERACT3.active && INTERACT3.scene) INTERACT3.scene.render();
+      else if(typeof SCALE3!=="undefined" && SCALE3.active && SCALE3.scene) SCALE3.scene.render();
       else {updateBabylon3D();scene.render();}
     }});
     renderBabylon3D();
@@ -315,6 +317,7 @@ function babylonMesh3(name, positions, normals, colors, indices, key) {
 }
 function renderBabylon3D() {
   const b=V3.bjs; if(!b?.ready || !A) return;
+  if(typeof INTERACT3!=="undefined" && INTERACT3.active)return;
   if(typeof SCALE3!=="undefined" && SCALE3.active){updateScaleCase3();return;}
   try {
     const d=typeof CASE_MESH!=="undefined" && CASE_MESH[S.caseId];

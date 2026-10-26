@@ -24,7 +24,7 @@ function scheduleItemTip(e,resolve){
 }
 $('view').addEventListener('pointermove',e=>{const key=e.target.closest('.pk')?.dataset.key;scheduleItemTip(e,()=>key);});
 $('gl3d').addEventListener('pointermove',e=>scheduleItemTip(e,()=>{
- const b=V3.bjs;if(!b?.ready||SCALE3.active)return null;
+ const b=V3.bjs;if(!b?.ready||SCALE3.active||(typeof INTERACT3!=="undefined"&&INTERACT3.active))return null;
  const rect=$('gl3d').getBoundingClientRect();
  const hit=b.scene.pick((e.clientX-rect.left)*b.engine.getRenderWidth()/rect.width,(e.clientY-rect.top)*b.engine.getRenderHeight()/rect.height,m=>m.isEnabled()&&m.isVisible);
  return hit?.pickedMesh?.metadata?.key;

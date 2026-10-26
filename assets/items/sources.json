@@ -1,0 +1,24 @@
+[
+  {
+    "file": "battery.obj",
+    "source": "Калибр 5040 аккумулятор 1.STEP",
+    "part": 46,
+    "triangles": 52,
+    "dimensions": [
+      319.0,
+      162.0,
+      210.0
+    ]
+  },
+  {
+    "file": "cylinder.stl",
+    "source": "Калибр 4035 с укладкой балон 3.STEP",
+    "part": 16,
+    "triangles": 108,
+    "dimensions": [
+      347.0,
+      115.0,
+      116.0
+    ]
+  }
+]

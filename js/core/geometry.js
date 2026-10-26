@@ -72,6 +72,10 @@ function rrSegs(r, rad, notch) {
   return segs;
 }
 function pocketSegs(it, g, P) {
+  if(it.model && it.customShape?.length>=3 && !it.customPocketScale){
+    const p=g.pocket,points=ItemModels.contour(it,P.clear).map(v=>!g.rot?{x:p.x+v.x,y:p.y+v.y}:{x:p.x+v.y,y:p.y+it.l+2*P.clear-v.x});
+    return points.map((a,i)=>{const b=points[(i+1)%points.length];return {t:'L',x1:a.x,y1:a.y,x2:b.x,y2:b.y};});
+  }
   if (Array.isArray(it.customShape) && it.customShape.length >= 3) {
     const p = g.pocket, pts = it.customShape;
     const map = v => it.shape === "cyl" || !g.rot
